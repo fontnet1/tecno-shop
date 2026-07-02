@@ -3,28 +3,28 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, phone, password=None):
         """
-        Creates and saves a User with the given email.
+        Creates and saves a User with the given phone.
         """
-        if not email:
-            raise ValueError("Users must have an email address")
+        if not phone:
+            raise ValueError("Users must have an phone address")
 
         user = self.model(
-            email=self.normalize_email(email),
+            phone=phone,
         )
 
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None):
+    def create_superuser(self, phone, password=None):
         """
         Creates and saves a superuser with the given email
         .
         """
         user = self.create_user(
-            email,
+            phone,
             password=password,
         )
         user.is_admin = True
@@ -37,6 +37,14 @@ class User(AbstractBaseUser):
         verbose_name="آدرس ایمیل",
         max_length=255,
         unique=True,
+        null=True,
+        blank=True,
+    )
+
+    phone = models.CharField(
+        max_length=11,
+        unique=True,
+        verbose_name="شماره تلفن",
     )
     full_name = models.CharField(max_length=255,verbose_name="نام کامل")
     is_active = models.BooleanField(default=True,verbose_name="فعال")
@@ -44,7 +52,7 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
-    USERNAME_FIELD = "email"
+    USERNAME_FIELD = "phone"
     REQUIRED_FIELDS = []
 
     class Meta:
@@ -52,7 +60,7 @@ class User(AbstractBaseUser):
         verbose_name_plural=verbose_name+"ها"
 
     def __str__(self):
-        return self.email
+        return self.phone
 
     def has_perm(self, perm, obj=None):
         "Does the user have a specific permission?"

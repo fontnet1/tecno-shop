@@ -2,6 +2,9 @@ from Account.models import User
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
 from django import forms
+from django import forms
+from django.contrib.auth import authenticate
+
 
 
 
@@ -16,7 +19,7 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["email",]
+        fields = ["phone",]
 
     def clean_password2(self):
         # Check that the two password entries match
@@ -45,5 +48,48 @@ class UserChangeForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["email", "password", "is_active", "is_admin"]
+        fields = ["email","phone", "password", "is_active", "is_admin"]
 
+
+class LoginForm(forms.Form):
+    phone = forms.CharField(
+        max_length=11,
+        widget=forms.TextInput(
+            attrs={
+                "id": "login-phone",
+                "class": "form-control",
+                "placeholder": "09xxxxxxxxx",
+            }
+        ),
+    )
+
+    password = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                "id": "login-password",
+                "class": "form-control",
+                "placeholder": "Enter your password",
+            }
+        )
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        phone = cleaned_data.get("phone")
+        password = cleaned_data.get("password")
+
+        if phone and password:
+            user = authenticate(
+                username=phone,
+                password=password,
+            )
+
+            if user is None:
+                raise forms.ValidationError(
+                    "Phone number or password is incorrect."
+                )
+
+            self.user = user
+
+        return cleaned_data

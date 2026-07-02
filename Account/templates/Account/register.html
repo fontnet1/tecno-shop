@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MULTI SHOP - Sign Up</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Left Panel - Branding -->
+    <div class="brand-panel">
+      <div class="decorative-circle c1"></div>
+      <div class="decorative-circle c2"></div>
+      <div class="decorative-circle c3"></div>
+
+      <div class="brand-top">
+        <div class="logo">
+          <span class="logo-multi">MULTI</span>
+          <span class="logo-shop">SHOP</span>
+        </div>
+        <div class="logo-line"></div>
+      </div>
+
+      <div class="brand-center">
+        <h1>Create Your<br /><span class="highlight">Account</span></h1>
+        <p>Join us today and enjoy exclusive deals, free shipping, and a seamless shopping experience tailored just for you.</p>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span>Free shipping on orders over $50</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span>Easy 30-day return policy</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span>24/7 customer support</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="brand-bottom">
+        &copy; 2025 MULTI SHOP. All rights reserved.
+      </div>
+    </div>
+
+    <!-- Right Panel - Register Form -->
+    <div class="form-panel">
+      <div class="form-wrapper">
+        <!-- Mobile Logo -->
+        <div class="mobile-logo">
+          <span class="logo-multi">MULTI</span>
+          <span class="logo-shop">SHOP</span>
+        </div>
+
+        <div class="form-header">
+          <h2>Create Account</h2>
+          <p>Create a new account and start shopping today</p>
+        </div>
+
+        <form onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label for="reg-name">Full Name</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <input type="text" id="reg-name" placeholder="Enter your full name" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-email">Email <span class="optional">(Optional)</span></label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+              <input type="email" id="reg-email" placeholder="example@email.com" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-phone">Phone Number</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+              <input type="tel" id="reg-phone" placeholder="+1 (555) 000-0000" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-password">Password</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <input type="password" id="reg-password" placeholder="Minimum 8 characters" />
+              <button type="button" class="toggle-password" onclick="togglePassword('reg-password', this)">
+                <svg class="eye-open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <svg class="eye-closed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                  <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                  <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                  <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                  <path d="m2 2 20 20" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-confirm">Confirm Password</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <input type="password" id="reg-confirm" placeholder="Re-enter your password" />
+              <button type="button" class="toggle-password" onclick="togglePassword('reg-confirm', this)">
+                <svg class="eye-open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <svg class="eye-closed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                  <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                  <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                  <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                  <path d="m2 2 20 20" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="checkbox-row">
+            <input type="checkbox" id="terms" />
+            <label for="terms">I agree to the <a href="#" class="link-inline">Terms of Service</a> and <a href="#" class="link-inline">Privacy Policy</a>.</label>
+          </div>
+
+          <button type="submit" class="btn-primary">Sign Up</button>
+        </form>
+
+        <p class="switch-text">
+          Already have an account? <a href="login.html" class="link">Sign In</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -10904,3 +10904,526 @@ h6 {
     width: 100%;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===== Reset & Base ===== */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f0f0f0;
+  color: #333333;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===== Container ===== */
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ===== Left Brand Panel ===== */
+.brand-panel {
+  display: none;
+  width: 50%;
+  background: #333333;
+  padding: 3rem;
+  position: relative;
+  overflow: hidden;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+@media (min-width: 1024px) {
+  .brand-panel {
+    display: flex;
+  }
+}
+
+.decorative-circle {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.c1 {
+  top: -6rem;
+  left: -6rem;
+  width: 18rem;
+  height: 18rem;
+  background: #FFD700;
+  opacity: 0.1;
+}
+
+.c2 {
+  bottom: -8rem;
+  right: -8rem;
+  width: 24rem;
+  height: 24rem;
+  background: #FFD700;
+  opacity: 0.05;
+}
+
+.c3 {
+  top: 33%;
+  right: 4rem;
+  width: 10rem;
+  height: 10rem;
+  background: #ffffff;
+  opacity: 0.05;
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+}
+
+.logo-multi {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.logo-shop {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #FFD700;
+  letter-spacing: -0.02em;
+}
+
+.logo-line {
+  width: 3rem;
+  height: 4px;
+  background: #FFD700;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.brand-top {
+  position: relative;
+  z-index: 10;
+}
+
+.brand-center {
+  position: relative;
+  z-index: 10;
+  max-width: 28rem;
+}
+
+.brand-center h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+}
+
+.brand-center h1 .highlight {
+  color: #FFD700;
+}
+
+.brand-center p {
+  color: #d1d5db;
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+/* Features */
+.features {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.feature-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #FFD700;
+}
+
+.feature span {
+  color: #d1d5db;
+  font-size: 0.875rem;
+}
+
+.brand-bottom {
+  position: relative;
+  z-index: 10;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* ===== Mobile Logo ===== */
+.mobile-logo {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .mobile-logo {
+    display: none;
+  }
+}
+
+.mobile-logo .logo-multi {
+  font-size: 1.875rem;
+  color: #333333;
+}
+
+.mobile-logo .logo-shop {
+  font-size: 1.875rem;
+  color: #FFD700;
+}
+
+/* ===== Right Form Panel ===== */
+.form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .form-panel {
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .form-panel {
+    padding: 3rem;
+  }
+}
+
+.form-wrapper {
+  width: 100%;
+  max-width: 28rem;
+}
+
+/* ===== Form Sections ===== */
+.form-section {
+  display: none;
+}
+
+.form-section.active {
+  display: block;
+}
+
+/* Back Button */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #666666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.back-btn:hover {
+  opacity: 0.7;
+}
+
+/* Form Header */
+.form-header {
+  margin-bottom: 2rem;
+}
+
+.form-header h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #333333;
+}
+
+.form-header p {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #888888;
+}
+
+/* ===== Form Groups ===== */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #333333;
+  margin-bottom: 0.5rem;
+}
+
+.optional {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #999999;
+}
+
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.label-row label {
+  margin-bottom: 0;
+}
+
+/* ===== Input Wrapper ===== */
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaaaaa;
+  pointer-events: none;
+}
+
+.input-wrapper input {
+  width: 100%;
+  height: 3rem;
+  padding: 0 2.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #333333;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.input-wrapper input::placeholder {
+  color: #9ca3af;
+}
+
+.input-wrapper input:focus {
+  border-color: #FFD700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+}
+
+/* Toggle Password Button */
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.toggle-password:hover {
+  color: #6b7280;
+}
+
+/* ===== Links ===== */
+.link {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #d4a800;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: #b8960a;
+  text-decoration: underline;
+}
+
+.link-inline {
+  font-weight: 500;
+  color: #333333;
+  transition: color 0.2s;
+}
+
+.link-inline:hover {
+  color: #d4a800;
+  text-decoration: underline;
+}
+
+/* ===== Checkbox ===== */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  accent-color: #FFD700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.checkbox-row label {
+  font-size: 0.875rem;
+  color: #666666;
+  cursor: pointer;
+}
+
+/* ===== Primary Button ===== */
+.btn-primary {
+  width: 100%;
+  height: 3rem;
+  background: #FFD700;
+  color: #333333;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:active {
+  opacity: 0.85;
+}
+
+/* ===== Divider ===== */
+.divider {
+  position: relative;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: center;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  top: 50%;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.divider span {
+  position: relative;
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  color: #999999;
+  background: #f0f0f0;
+}
+
+/* ===== Social Buttons ===== */
+.social-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #333333;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.btn-social:hover {
+  background: #f9fafb;
+}
+
+/* ===== Switch Text ===== */
+.switch-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #888888;
+  margin-top: 1.5rem;
+}
+
+.switch-text .link {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+/* ===== Animations ===== */
+.form-section {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

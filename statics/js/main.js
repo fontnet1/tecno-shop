@@ -102,3 +102,42 @@
     
 })(jQuery);
 
+
+
+
+
+
+
+
+
+
+
+
+// ===== Toggle Password Visibility =====
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const eyeOpen = btn.querySelector('.eye-open');
+  const eyeClosed = btn.querySelector('.eye-closed');
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    eyeOpen.style.display = 'none';
+    eyeClosed.style.display = 'block';
+  } else {
+    input.type = 'password';
+    eyeOpen.style.display = 'block';
+    eyeClosed.style.display = 'none';
+  }
+}
+
+// ===== Form Handlers =====
+
+
+function handleRegister(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-name').value;
+  const email = document.getElementById('reg-email').value;
+  const phone = document.getElementById('reg-phone').value;
+  const password = document.getElementById('reg-password').value;
+  alert('Register submitted!\nName: ' + name + '\nEmail: ' + (email || '(not provided)') + '\nPhone: ' + phone + '\nPassword: ' + password);
+}

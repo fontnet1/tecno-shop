@@ -1,35 +1,34 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, phone, password=None):
-        """
-        Creates and saves a User with the given phone.
-        """
+
+    def create_user(self , phone, password=None, **extra_fields):
         if not phone:
-            raise ValueError("Users must have an phone address")
+            raise ValueError("Phone is required.")
 
         user = self.model(
             phone=phone,
+            **extra_fields
         )
+
 
         user.set_password(password)
         user.save(using=self._db)
+
         return user
 
-    def create_superuser(self, phone, password=None):
-        """
-        Creates and saves a superuser with the given email
-        .
-        """
-        user = self.create_user(
-            phone,
+    def create_superuser(self, phone, password=None, **extra_fields):
+
+        extra_fields.setdefault("is_admin", True)
+        extra_fields.setdefault("is_active", True)
+        return self.create_user(
+            phone=phone,
             password=password,
+            **extra_fields
         )
-        user.is_admin = True
-        user.save(using=self._db)
-        return user
 
 
 class User(AbstractBaseUser):
@@ -47,7 +46,7 @@ class User(AbstractBaseUser):
         verbose_name="شماره تلفن",
     )
     full_name = models.CharField(max_length=255,verbose_name="نام کامل")
-    is_active = models.BooleanField(default=True,verbose_name="فعال")
+    is_active = models.BooleanField(default=False,verbose_name="فعال")
     is_admin = models.BooleanField(default=False,verbose_name="ادمین")
 
     objects = UserManager()
@@ -77,3 +76,15 @@ class User(AbstractBaseUser):
         "Is the user a member of staff?"
         # Simplest possible answer: All admins are staff
         return self.is_admin
+
+class OTP(models.Model):
+    phone = models.CharField(max_length=11)
+    code = models.PositiveIntegerField(
+        validators=[
+            MinValueValidator(100000),
+            MaxValueValidator(999999),
+        ]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.phone

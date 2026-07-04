@@ -131,13 +131,3 @@ function togglePassword(inputId, btn) {
 }
 
 // ===== Form Handlers =====
-
-
-function handleRegister(e) {
-  e.preventDefault();
-  const name = document.getElementById('reg-name').value;
-  const email = document.getElementById('reg-email').value;
-  const phone = document.getElementById('reg-phone').value;
-  const password = document.getElementById('reg-password').value;
-  alert('Register submitted!\nName: ' + name + '\nEmail: ' + (email || '(not provided)') + '\nPhone: ' + phone + '\nPassword: ' + password);
-}

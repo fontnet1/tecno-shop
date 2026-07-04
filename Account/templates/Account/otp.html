@@ -1,0 +1,167 @@
+{% load static  %}
+<head>
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <link rel="stylesheet" href={% static  "css/style.css"%} />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MULTI SHOP - Verify OTP</title>
+  <link rel="stylesheet" href={% static "css/otp.css" %}/>
+</head>
+<body>
+  <div class="container">
+    <!-- Left Panel - Branding -->
+    <div class="brand-panel">
+      <div class="decorative-circle c1"></div>
+      <div class="decorative-circle c2"></div>
+      <div class="decorative-circle c3"></div>
+
+      <div class="brand-top">
+        <div class="logo">
+          <span class="logo-multi">MULTI</span>
+          <span class="logo-shop">SHOP</span>
+        </div>
+        <div class="logo-line"></div>
+      </div>
+
+      <div class="brand-center">
+        <h1>Verify &<br /><span class="highlight">Get Started</span></h1>
+        <p>We've sent a verification code to your phone number. Enter it below to confirm your identity and continue to your account.</p>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <span>Secure verification process</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <span>Code expires in 2 minutes</span>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span>Quick & easy access</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="brand-bottom">
+        &copy; 2025 MULTI SHOP. All rights reserved.
+      </div>
+    </div>
+
+    <!-- Right Panel - OTP Form -->
+    <div class="form-panel">
+      <div class="form-wrapper">
+        <!-- Mobile Logo -->
+        <div class="mobile-logo">
+          <span class="logo-multi">MULTI</span>
+          <span class="logo-shop">SHOP</span>
+        </div>
+
+        <button class="back-btn" onclick="history.back()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          Back
+        </button>
+
+        <div class="form-header">
+          <h2>Verify Your Number</h2>
+          <p>Enter the 6-digit code sent to your phone</p>
+        </div>
+
+                   <form method="post" id="otp-form">
+                {% csrf_token %}
+
+                {{ form.non_field_errors }}
+                {{ form.otp }}
+
+                <div class="otp-container">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+
+                    <div class="otp-separator">-</div>
+
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                </div>
+
+                <div class="otp-info">
+                    <span class="otp-phone">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+
+                        {{ phone }}
+                    </span>
+
+                    <a href="{% url 'Account:resester' %}" class="link">
+                        Change number
+                    </a>
+                </div>
+
+                <div class="otp-timer" id="otp-timer">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+
+                    <span id="timer-text">
+                        Resend code in <strong id="countdown">02:00</strong>
+                    </span>
+                </div>
+
+                <button type="submit" class="btn-primary" id="verify-btn">
+                    Verify Code
+                </button>
+            </form>
+
+            <form method="post"
+                  action="{% url 'Account:resend_otp' %}"
+                  id="resend-form"
+                  style="display:none;margin-top:15px;">
+                {% csrf_token %}
+
+                <button type="submit" class="btn-primary">
+                    Resend Code
+                </button>
+            </form>
+
+        <div class="otp-resend" id="resend-section" style="display: none;">
+          <p>Didn't receive the code?</p>
+          <button class="btn-resend">Resend Code</button>
+        </div>
+
+        <p class="switch-text">
+          Having trouble? <a href="#" class="link">Contact Support</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src={% static "js/otp.js" %}></script>
+<script>const expireTime = {{ expire_timestamp }};</script>
+<script src={% static "js/timer.js" %}></script>
+</body>
+</html>

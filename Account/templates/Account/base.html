@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MULTI SHOP - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel - Branding -->
+        <div class="brand-panel">
+            <div class="decorative-circle c1"></div>
+            <div class="decorative-circle c2"></div>
+            <div class="decorative-circle c3"></div>
+
+            <div class="brand-top">
+                <div class="logo">
+                    <span class="logo-multi">MULTI</span>
+                    <span class="logo-shop">SHOP</span>
+                </div>
+                <div class="logo-line"></div>
+            </div>
+
+            <div class="brand-center">
+                {% block brand_content %}{% endblock %}
+            </div>
+
+            <div class="brand-bottom">
+                &copy; 2025 MULTI SHOP. All rights reserved.
+            </div>
+        </div>
+
+        <!-- Right Panel - Form -->
+        <div class="form-panel">
+            <div class="form-wrapper">
+                <!-- Mobile Logo -->
+                <div class="mobile-logo">
+                    <span class="logo-multi">MULTI</span>
+                    <span class="logo-shop">SHOP</span>
+                </div>
+
+                {% block form_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    {% block messages %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="
+                    position: fixed; top: 20px; right: 20px; z-index: 9999;
+                    padding: 12px 24px; border-radius: 8px; font-size: 14px;
+                    max-width: 400px;
+                    {% if message.tags == 'success' %}
+                        background: #dcfce7; color: #166534; border: 1px solid #86efac;
+                    {% elif message.tags == 'error' %}
+                        background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;
+                    {% elif message.tags == 'warning' %}
+                        background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+                    {% else %}
+                        background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc;
+                    {% endif %}
+                ">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endblock %}
+
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

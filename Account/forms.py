@@ -1,28 +1,55 @@
-from Account.models import User
+from django import forms
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
-from django.contrib.auth import authenticate
-from django import forms
-from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator, MinLengthValidator
 
 
+User = get_user_model()
 
 
+# ─── Validators ────────────────────────────────────────────────────
+IRANIAN_PHONE_VALIDATOR = RegexValidator(
+    regex=r"^09\d{9}$",
+    message="Phone number must start with 09 and be 11 digits.",
+    code="invalid_phone",
+)
+
+PASSWORD_VALIDATORS = [
+    MinLengthValidator(8, message="Password must be at least 8 characters long."),
+    RegexValidator(
+        regex=r"[A-Z]",
+        message="Password must contain at least one uppercase letter.",
+        code="no_uppercase",
+    ),
+    RegexValidator(
+        regex=r"[a-z]",
+        message="Password must contain at least one lowercase letter.",
+        code="no_lowercase",
+    ),
+    RegexValidator(
+        regex=r"\d",
+        message="Password must contain at least one digit.",
+        code="no_digit",
+    ),
+]
+
+
+# ─── Admin Forms ──────────────────────────────────────────────────
 class UserCreationForm(forms.ModelForm):
-    """A form for creating new users. Includes all the required
-    fields, plus a repeated password."""
+    """User creation form for admin panel"""
 
-    password1 = forms.CharField(label="کذرواژه", widget=forms.PasswordInput)
+    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
     password2 = forms.CharField(
-        label="گذرواژه را دوباره وارد کنید", widget=forms.PasswordInput
+        label="Confirm Password",
+        widget=forms.PasswordInput,
     )
 
     class Meta:
         model = User
-        fields = ["phone",]
+        fields = ["phone"]
 
     def clean_password2(self):
-        # Check that the two password entries match
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
@@ -30,7 +57,6 @@ class UserCreationForm(forms.ModelForm):
         return password2
 
     def save(self, commit=True):
-        # Save the provided password in hashed format
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password1"])
         if commit:
@@ -39,26 +65,27 @@ class UserCreationForm(forms.ModelForm):
 
 
 class UserChangeForm(forms.ModelForm):
-    """A form for updating users. Includes all the fields on
-    the user, but replaces the password field with admin's
-    disabled password hash display field.
-    """
+    """User edit form for admin panel"""
 
     password = ReadOnlyPasswordHashField()
 
     class Meta:
         model = User
-        fields = ["email","phone", "password", "is_active", "is_admin"]
+        fields = ["email", "phone", "password", "is_active", "is_admin"]
 
 
+# ─── Auth Forms ────────────────────────────────────────────────────
 class LoginForm(forms.Form):
     phone = forms.CharField(
         max_length=11,
+        validators=[IRANIAN_PHONE_VALIDATOR],
         widget=forms.TextInput(
             attrs={
                 "id": "login-phone",
                 "class": "form-control",
                 "placeholder": "09xxxxxxxxx",
+                "inputmode": "numeric",
+                "autocomplete": "tel",
             }
         ),
     )
@@ -95,13 +122,6 @@ class LoginForm(forms.Form):
         return cleaned_data
 
 
-
-
-User = get_user_model()
-
-
-
-
 class RegisterForm(forms.Form):
     full_name = forms.CharField(
         max_length=100,
@@ -125,20 +145,23 @@ class RegisterForm(forms.Form):
 
     phone = forms.CharField(
         max_length=11,
+        validators=[IRANIAN_PHONE_VALIDATOR],
         widget=forms.TextInput(
             attrs={
                 "id": "reg-phone",
                 "placeholder": "09xxxxxxxxx",
+                "inputmode": "numeric",
+                "autocomplete": "tel",
             }
         ),
     )
 
     password = forms.CharField(
-        min_length=8,
+        validators=PASSWORD_VALIDATORS,
         widget=forms.PasswordInput(
             attrs={
                 "id": "reg-password",
-                "placeholder": "Minimum 8 characters",
+                "placeholder": "Minimum 8 characters, including uppercase, lowercase, and digit",
             }
         ),
     )
@@ -159,7 +182,6 @@ class RegisterForm(forms.Form):
             }
         ),
         error_messages={
-
             "required": "You must accept Terms of Service."
         }
     )
@@ -168,7 +190,7 @@ class RegisterForm(forms.Form):
         phone = self.cleaned_data["phone"]
 
         if User.objects.filter(phone=phone).exists():
-            raise forms.ValidationError("This phone number already exists.")
+            raise forms.ValidationError("This phone number is already registered.")
 
         return phone
 
@@ -177,7 +199,7 @@ class RegisterForm(forms.Form):
 
         if email:
             if User.objects.filter(email=email).exists():
-                raise forms.ValidationError("This email already exists.")
+                raise forms.ValidationError("This email is already registered.")
 
         return email
 
@@ -205,7 +227,6 @@ class RegisterForm(forms.Form):
         return user
 
 
-
 class VerifyOTPForm(forms.Form):
     otp = forms.CharField(
         min_length=6,
@@ -221,70 +242,74 @@ class VerifyOTPForm(forms.Form):
         otp = self.cleaned_data["otp"]
 
         if not otp.isdigit():
-            raise forms.ValidationError("OTP is invalid.")
+            raise forms.ValidationError("Invalid verification code.")
 
         return otp
 
 
-
-
 class LoginOTPForm(forms.Form):
-
     phone = forms.CharField(
         max_length=11,
+        validators=[IRANIAN_PHONE_VALIDATOR],
         widget=forms.TextInput(
             attrs={
                 "id": "login-phone",
                 "placeholder": "09xxxxxxxxx",
+                "inputmode": "numeric",
+                "autocomplete": "tel",
             }
         ),
     )
 
     def clean_phone(self):
         phone = self.cleaned_data["phone"]
-
-        if not User.objects.filter(phone=phone).exists():
-            raise forms.ValidationError(
-                "This phone number does not exist."
-            )
-
+        # Do not reveal whether user exists or not
         return phone
+
 
 class ResetPasswordForm(forms.Form):
     password = forms.CharField(
-        min_length=8,
-        widget=forms.PasswordInput()
+        validators=PASSWORD_VALIDATORS,
+        widget=forms.PasswordInput(
+            attrs={
+                "placeholder": "Minimum 8 characters, including uppercase, lowercase, and digit",
+            }
+        ),
     )
 
     confirm_password = forms.CharField(
-        widget=forms.PasswordInput()
+        widget=forms.PasswordInput(
+            attrs={
+                "placeholder": "Re-enter your password",
+            }
+        ),
     )
 
     def clean(self):
         cleaned = super().clean()
 
-        if cleaned["password"] != cleaned["confirm_password"]:
-            raise forms.ValidationError("Passwords do not match.")
+        if cleaned.get("password") and cleaned.get("confirm_password"):
+            if cleaned["password"] != cleaned["confirm_password"]:
+                raise forms.ValidationError("Passwords do not match.")
 
         return cleaned
+
 
 class ForgotPasswordForm(forms.Form):
     phone = forms.CharField(
         max_length=11,
+        validators=[IRANIAN_PHONE_VALIDATOR],
         widget=forms.TextInput(
             attrs={
                 "id": "phone",
                 "placeholder": "09xxxxxxxxx",
+                "inputmode": "numeric",
+                "autocomplete": "tel",
             }
         ),
     )
 
     def clean_phone(self):
         phone = self.cleaned_data["phone"]
-
-        if not User.objects.filter(phone=phone).exists():
-            raise forms.ValidationError(
-                "No account was found with this phone number."
-            )
-
+        # Do not reveal whether user exists or not
         return phone

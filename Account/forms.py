@@ -224,3 +224,67 @@ class VerifyOTPForm(forms.Form):
             raise forms.ValidationError("OTP is invalid.")
 
         return otp
+
+
+
+
+class LoginOTPForm(forms.Form):
+
+    phone = forms.CharField(
+        max_length=11,
+        widget=forms.TextInput(
+            attrs={
+                "id": "login-phone",
+                "placeholder": "09xxxxxxxxx",
+            }
+        ),
+    )
+
+    def clean_phone(self):
+        phone = self.cleaned_data["phone"]
+
+        if not User.objects.filter(phone=phone).exists():
+            raise forms.ValidationError(
+                "This phone number does not exist."
+            )
+
+        return phone
+
+class ResetPasswordForm(forms.Form):
+    password = forms.CharField(
+        min_length=8,
+        widget=forms.PasswordInput()
+    )
+
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput()
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+
+        if cleaned["password"] != cleaned["confirm_password"]:
+            raise forms.ValidationError("Passwords do not match.")
+
+        return cleaned
+
+class ForgotPasswordForm(forms.Form):
+    phone = forms.CharField(
+        max_length=11,
+        widget=forms.TextInput(
+            attrs={
+                "id": "phone",
+                "placeholder": "09xxxxxxxxx",
+            }
+        ),
+    )
+
+    def clean_phone(self):
+        phone = self.cleaned_data["phone"]
+
+        if not User.objects.filter(phone=phone).exists():
+            raise forms.ValidationError(
+                "No account was found with this phone number."
+            )
+
+        return phone

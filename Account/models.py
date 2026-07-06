@@ -78,13 +78,29 @@ class User(AbstractBaseUser):
         return self.is_admin
 
 class OTP(models.Model):
+
+    REGISTER = "register"
+    LOGIN = "login"
+    RESET_PASSWORD = "reset_password"
+
+    PURPOSE_CHOICES = [
+        (REGISTER, "Register"),
+        (LOGIN, "Login"),
+        (RESET_PASSWORD, "Reset Password"),
+    ]
+
     phone = models.CharField(max_length=11)
+
     code = models.PositiveIntegerField(
         validators=[
             MinValueValidator(100000),
             MaxValueValidator(999999),
         ]
     )
+
+    purpose = models.CharField(
+        max_length=20,
+        choices=PURPOSE_CHOICES,
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-        return self.phone

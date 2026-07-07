@@ -76,16 +76,13 @@ class UserChangeForm(forms.ModelForm):
 
 # ─── Auth Forms ────────────────────────────────────────────────────
 class LoginForm(forms.Form):
-    phone = forms.CharField(
-        max_length=11,
-        validators=[IRANIAN_PHONE_VALIDATOR],
+    username = forms.CharField(
+        max_length=255,
         widget=forms.TextInput(
             attrs={
-                "id": "login-phone",
+                "id": "login-username",
                 "class": "form-control",
-                "placeholder": "09xxxxxxxxx",
-                "inputmode": "numeric",
-                "autocomplete": "tel",
+                "placeholder": "Phone or Email",
             }
         ),
     )
@@ -100,27 +97,32 @@ class LoginForm(forms.Form):
         )
     )
 
+    # ─── اضافه شود ───
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+
     def clean(self):
         cleaned_data = super().clean()
 
-        phone = cleaned_data.get("phone")
+        username = cleaned_data.get("username")
         password = cleaned_data.get("password")
 
-        if phone and password:
+        if username and password:
             user = authenticate(
-                username=phone,
+                request=self.request,   # ← اینجا
+                username=username,
                 password=password,
             )
 
             if user is None:
                 raise forms.ValidationError(
-                    "Phone number or password is incorrect."
+                    "Phone number, email or password is incorrect."
                 )
 
             self.user = user
 
         return cleaned_data
-
 
 class RegisterForm(forms.Form):
     full_name = forms.CharField(

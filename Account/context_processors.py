@@ -31,7 +31,38 @@ def sms_info(request):
         logger.error("Ghasedak API error: %s", str(e), exc_info=True)
 
     return {
+
         "sms_balance": "-",
         "sms_plan": "-",
         "sms_expire": "-",
     }
+
+#new folder in orginal template to admin in admin to index.html
+# {% extends "admin/index.html" %}
+#
+# {% block content %}
+#
+# <div class="module">
+#     <h2>اطلاعات پنل پیامک</h2>
+#
+#     <table style="width:100%">
+#         <tr>
+#             <th>اعتبار</th>
+#             <td>{{ sms_balance }}</td>
+#         </tr>
+#
+#         <tr>
+#             <th>پلن</th>
+#             <td>{{ sms_plan }}</td>
+#         </tr>
+#
+#         <tr>
+#             <th>تاریخ انقضا</th>
+#             <td>{{ sms_expire }}</td>
+#         </tr>
+#     </table>
+# </div>
+#
+# {{ block.super }}
+#
+# {% endblock %}

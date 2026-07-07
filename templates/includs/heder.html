@@ -15,8 +15,22 @@
                     <div class="btn-group">
                         <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-toggle="dropdown">My Account</button>
                         <div class="dropdown-menu dropdown-menu-right">
-                            <button class="dropdown-item" type="button">Sign in</button>
-                            <button class="dropdown-item" type="button">Sign up</button>
+                           <form action="{% url 'Account:login' %}" method="post">
+                            {% csrf_token %}
+                             <button class="dropdown-item" type="submit">Sign in</button>
+                            </form>
+                        <form action="{% url "Account:register" %}" method="post">
+                            {% csrf_token %}
+                             <button class="dropdown-item" type="submit">Sign up</button>
+                            </form>
+
+
+                            {% if request.user.is_authenticated %}
+                            <form action="{% url 'Account:logout' %}" method="post">
+                                {% csrf_token %}
+                                <button class="dropdown-item" type="submit">Logout</button>
+                            </form>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

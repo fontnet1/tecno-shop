@@ -137,3 +137,7 @@ load_dotenv(BASE_DIR / ".env")
 
 GHASEDAK_API_KEY = os.getenv("GHASEDAK_API_KEY")
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'Account.authentication.EmailAuthBackend']
+

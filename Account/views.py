@@ -31,26 +31,17 @@ class Login(View):
             return redirect("home:home")
 
         form = LoginForm()
-        return render(
-            request,
-            "Account/login.html",
-            {"form": form},
-        )
+        return render(request, "Account/login.html", {"form": form})
 
     def post(self, request):
-        form = LoginForm(request.POST)
+        form = LoginForm(request.POST, request=request)  # ← اینجا
 
         if form.is_valid():
             login(request, form.user)
             success(request, "Logged in successfully.")
             return redirect("home:home")
 
-        return render(
-            request,
-            "Account/login.html",
-            {"form": form},
-        )
-
+        return render(request, "Account/login.html", {"form": form})
 
 # ─── Register ─────────────────────────────────────────────────────
 class Register(View):

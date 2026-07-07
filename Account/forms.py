@@ -3,8 +3,29 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator, MinLengthValidator
+import re
+
+EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+def is_email(value: str) -> bool:
+    """Check if the value looks like an email address."""
+    return bool(EMAIL_REGEX.match(value.strip()))
+
+
+def is_phone(value: str) -> bool:
+    """Check if the value matches Iranian phone format."""
+    return bool(re.match(r"^09\d{9}$", value.strip()))
+
+
+def validate_username(value: str) -> str:
+    """Validate that value is either a valid phone or a valid email."""
+    value = value.strip()
+    if not is_phone(value) and not is_email(value):
+        raise ValidationError(
+            "Please enter a valid phone number (09xxxxxxxxx) or email address."
+        )
+    return value
 User = get_user_model()
 
 
@@ -250,30 +271,27 @@ class VerifyOTPForm(forms.Form):
 
 
 class LoginOTPForm(forms.Form):
-    phone = forms.CharField(
-        max_length=11,
-        validators=[IRANIAN_PHONE_VALIDATOR],
+    username = forms.CharField(
+        max_length=255,
         widget=forms.TextInput(
             attrs={
-                "id": "login-phone",
-                "placeholder": "09xxxxxxxxx",
-                "inputmode": "numeric",
-                "autocomplete": "tel",
+                "id": "login-username",
+                "placeholder": "Phone or Email",
+                "autocomplete": "username",
             }
         ),
     )
 
-    def clean_phone(self):
-        phone = self.cleaned_data["phone"]
-        # Do not reveal whether user exists or not
-        return phone
-
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        return validate_username(username)
 
 class ResetPasswordForm(forms.Form):
     password = forms.CharField(
         validators=PASSWORD_VALIDATORS,
         widget=forms.PasswordInput(
             attrs={
+                "id": "reg-password",
                 "placeholder": "Minimum 8 characters, including uppercase, lowercase, and digit",
             }
         ),
@@ -282,6 +300,7 @@ class ResetPasswordForm(forms.Form):
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(
             attrs={
+                "id": "reg-confirm",
                 "placeholder": "Re-enter your password",
             }
         ),
@@ -298,20 +317,17 @@ class ResetPasswordForm(forms.Form):
 
 
 class ForgotPasswordForm(forms.Form):
-    phone = forms.CharField(
-        max_length=11,
-        validators=[IRANIAN_PHONE_VALIDATOR],
+    username = forms.CharField(
+        max_length=255,
         widget=forms.TextInput(
             attrs={
-                "id": "phone",
-                "placeholder": "09xxxxxxxxx",
-                "inputmode": "numeric",
-                "autocomplete": "tel",
+                "id": "forgot-username",
+                "placeholder": "Phone or Email",
+                "autocomplete": "username",
             }
         ),
     )
 
-    def clean_phone(self):
-        phone = self.cleaned_data["phone"]
-        # Do not reveal whether user exists or not
-        return phone
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        return validate_username(username)

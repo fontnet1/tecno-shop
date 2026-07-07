@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .forms import UserCreationForm, UserChangeForm
-from Account.models import User
+from Account.models import User, OTP
 
 
 class UserAdmin(BaseUserAdmin):

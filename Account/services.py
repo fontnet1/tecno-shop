@@ -27,15 +27,15 @@ class OTPService:
     """OTP code management service"""
 
     @staticmethod
-    def send_otp(phone: str, purpose: str) -> OTP:
-        """Create, hash, store and send an OTP code.
+    def _generate_and_store_otp(phone: str, purpose: str) -> tuple:
+        """Generate OTP code, hash it, store in DB, and return (otp_object, raw_code).
 
         Args:
-            phone: User's 11-digit phone number
+            phone: User's phone number (used as identifier in DB)
             purpose: Purpose of sending the code (register, login, reset_password)
 
         Returns:
-            OTP: Created OTP model instance
+            tuple: (OTP instance, raw_code as int)
 
         Raises:
             ValueError: If send rate limit has been exceeded
@@ -51,7 +51,7 @@ class OTPService:
             )
 
         code = randint(100000, 999999)
-
+        print(code)
         OTP.objects.filter(
             phone=phone,
             purpose=purpose,
@@ -67,7 +67,27 @@ class OTPService:
         # ─── Rate limit counter ───
         cache.set(cache_key, attempt_count + 1, timeout=AccountSettings.OTP_RESEND_WINDOW_SECONDS)
 
-        # ─── Send SMS ───
+        logger.info("OTP generated for %s for purpose: %s", phone, purpose)
+
+        return otp, code
+
+    @staticmethod
+    def send_otp_sms(phone: str, purpose: str) -> OTP:
+        """Generate OTP and send via SMS (Ghasedak).
+
+        Args:
+            phone: User's 11-digit phone number
+            purpose: Purpose of sending the code
+
+        Returns:
+            OTP: Created OTP model instance
+
+        Raises:
+            ValueError: If send rate limit has been exceeded
+        """
+        otp, code = OTPService._generate_and_store_otp(phone, purpose)
+
+        # ─── Send SMS via Ghasedak ───
         sms = ghasedak_sms.SendOtpInput(
             send_date=None,
             receptors=[
@@ -87,9 +107,78 @@ class OTPService:
 
         # sms_api.send_otp(sms)  # ← Enable in production
 
-        logger.info("OTP sent to %s for purpose: %s", phone, purpose)
+        logger.info("OTP sent via SMS to %s for purpose: %s", phone, purpose)
 
         return otp
+
+    @staticmethod
+    def send_otp_email(email: str, phone: str, purpose: str) -> OTP:
+        """Generate OTP and send via Email.
+
+        Args:
+            email: User's email address
+            phone: User's phone number (used as DB identifier)
+            purpose: Purpose of sending the code
+
+        Returns:
+            OTP: Created OTP model instance
+
+        Raises:
+            ValueError: If send rate limit has been exceeded
+        """
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        otp, code = OTPService._generate_and_store_otp(phone, purpose)
+
+        subject_map = {
+            OTP.REGISTER: "Verify Your Registration",
+            OTP.LOGIN: "Login Verification Code",
+            OTP.RESET_PASSWORD: "Password Reset Code",
+        }
+        subject = subject_map.get(purpose, "Verification Code")
+
+        message = (
+            f"Hello,{phone}\n\n"
+            f"Your verification code is: {email}\n\n"
+            f"This code expires in {AccountSettings.OTP_EXPIRE_MINUTES} minutes.\n"
+            f"If you did not request this, please ignore this email."
+        )
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+        logger.info("OTP sent via Email to %s for purpose: %s", email, purpose)
+
+        return otp
+
+    @staticmethod
+    def send_otp(phone: str, purpose: str, email: str = None) -> OTP:
+        """Send OTP via Email if email provided, otherwise via SMS.
+
+        Args:
+            phone: User's phone number
+            purpose: Purpose of sending the code
+            email: User's email address (optional, if provided sends via email)
+
+        Returns:
+            OTP: Created OTP model instance
+
+        Raises:
+            ValueError: If send rate limit has been exceeded
+        """
+        if email:
+            return OTPService.send_otp_email(
+                email=email,
+                phone=phone,
+                purpose=purpose,
+            )
+        return OTPService.send_otp_sms(phone, purpose)
 
     @staticmethod
     def verify_otp(phone: str, code: str, purpose: str) -> Optional[OTP]:
@@ -135,7 +224,6 @@ class OTPService:
         cache.set(cache_key, verify_attempts + 1, timeout=AccountSettings.OTP_VERIFY_WINDOW_SECONDS)
         logger.warning("Invalid OTP attempt for %s", phone)
         return None
-
 
 class AuthService:
     """Authentication and user management service"""

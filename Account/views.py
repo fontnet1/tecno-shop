@@ -9,6 +9,7 @@ from .forms import (
     ResetPasswordForm,
     ForgotPasswordForm,
 )
+from django.db.models import Q
 from django.contrib.auth import login, logout
 from django.contrib.messages import success, error, warning
 from django.shortcuts import render, redirect
@@ -34,7 +35,8 @@ class Login(View):
         return render(request, "Account/login.html", {"form": form})
 
     def post(self, request):
-        form = LoginForm(request.POST, request=request)  # ← اینجا
+
+        form = LoginForm(request.POST, request=request)
 
         if form.is_valid():
             login(request, form.user)
@@ -199,6 +201,7 @@ class VerifyOTP(View):
         if purpose == OTP.REGISTER:
             user.is_active = True
             user.save()
+            user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(request, user)
             success(request, "Your account has been activated successfully.")
 
@@ -214,6 +217,7 @@ class VerifyOTP(View):
                 context["form"] = form
                 return render(request, "Account/otp.html", context)
 
+            user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(request, user)
             success(request, "Logged in successfully.")
 
@@ -246,6 +250,7 @@ class ResendOTP(View):
 
         try:
             OTPService.send_otp(phone=phone, purpose=purpose)
+
         except ValueError as e:
             warning(request, str(e))
 
@@ -284,8 +289,10 @@ class LoginWithOTP(View):
                 },
             )
 
-        phone = form.cleaned_data["phone"]
-        user = User.objects.filter(phone=phone).first()
+        username = form.cleaned_data["username"]
+        user = User.objects.filter(
+            Q(phone=username) | Q(email=username)
+        ).first()
 
         # ─── Do not reveal information: same response ───
         if user and not user.is_active:
@@ -299,10 +306,18 @@ class LoginWithOTP(View):
                 },
             )
 
+        # ─── LoginWithOTP.post() ───
         if user and user.is_active:
             try:
-                OTPService.send_otp(phone=phone, purpose=OTP.LOGIN)
-                request.session["phone"] = phone
+                is_email_input = '@' in username
+                user_email = user.email if is_email_input else None
+
+                OTPService.send_otp(
+                    phone=user.phone,
+                    purpose=OTP.LOGIN,
+                    email=user_email,
+                )
+                request.session["phone"] = user.phone
                 request.session["purpose"] = OTP.LOGIN
                 return redirect("Account:otp")
             except ValueError as e:
@@ -385,14 +400,24 @@ class ForgotPassword(View):
                 },
             )
 
-        phone = form.cleaned_data["phone"]
-        user = User.objects.filter(phone=phone).first()
+        username = form.cleaned_data["username"]
+        user = User.objects.filter(
+            Q(phone=username) | Q(email=username)
+        ).first()
 
         # ─── Do not reveal information ───
+        # ─── ForgotPassword.post() ───
         if user:
             try:
-                OTPService.send_otp(phone=phone, purpose=OTP.RESET_PASSWORD)
-                request.session["phone"] = phone
+                is_email_input = '@' in username
+                user_email = user.email if is_email_input else None
+
+                OTPService.send_otp(
+                    phone=user.phone,
+                    purpose=OTP.RESET_PASSWORD,
+                    email=user_email,
+                )
+                request.session["phone"] = user.phone
                 request.session["purpose"] = OTP.RESET_PASSWORD
                 return redirect("Account:otp")
             except ValueError as e:
@@ -407,7 +432,6 @@ class ForgotPassword(View):
                 "nameform": "Forgot Password",
             },
         )
-
 
 # ─── Logout ───────────────────────────────────────────────────────
 class LogoutView(View):

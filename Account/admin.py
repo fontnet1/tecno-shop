@@ -34,4 +34,3 @@ class UserAdmin(BaseUserAdmin):
 # Now register the new UserAdmin...
 admin.site.register(User, UserAdmin)
 # OTP should not be registered in admin panel — contains sensitive codes
-admin.site.register(OTP)

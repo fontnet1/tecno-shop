@@ -87,6 +87,8 @@ class Register(View):
 
         request.session["phone"] = cd["phone"]
         request.session["purpose"] = OTP.REGISTER
+        request.session["otp_identifier"] = cd["phone"]  # ← اضافه شد
+        request.session["otp_via_email"] = False  # ← اضافه شد
 
         return redirect("Account:otp")
 
@@ -110,6 +112,8 @@ class VerifyOTP(View):
         """Prepare common context for GET and POST"""
         phone = request.session["phone"]
         purpose = request.session["purpose"]
+        identifier = request.session.get("otp_identifier", phone)
+        via_email = request.session.get("otp_via_email", False)
 
         otp = OTP.objects.filter(
             phone=phone,
@@ -121,15 +125,23 @@ class VerifyOTP(View):
 
         expire_timestamp = int(
             (
-                otp.created_at +
-                timedelta(minutes=AccountSettings.OTP_EXPIRE_MINUTES)
+                    otp.created_at +
+                    timedelta(minutes=AccountSettings.OTP_EXPIRE_MINUTES)
             ).timestamp()
         )
 
-        masked_phone = f"{phone[:4]}***{phone[-2:]}"
+        # Mask phone or email
+        if via_email:
+            parts = identifier.split('@')
+            name = parts[0]
+            domain = parts[1] if len(parts) > 1 else ''
+            masked = name[:2] + '***@' + domain
+        else:
+            masked = f"{phone[:4]}***{phone[-2:]}"
 
         return {
-            "phone": masked_phone,
+            "identifier": masked,
+            "via_email": via_email,
             "expire_timestamp": expire_timestamp,
         }
 
@@ -229,12 +241,15 @@ class VerifyOTP(View):
             otp_object.delete()
             request.session.pop("phone", None)
             request.session.pop("purpose", None)
+            request.session.pop("otp_identifier", None)
+            request.session.pop("otp_via_email", None)
             return redirect("Account:reset_password")
 
         otp_object.delete()
         request.session.pop("phone", None)
         request.session.pop("purpose", None)
-
+        request.session.pop("otp_identifier", None)
+        request.session.pop("otp_via_email", None)
         return redirect("home:home")
 
 
@@ -244,18 +259,29 @@ class ResendOTP(View):
     def post(self, request):
         phone = request.session.get("phone")
         purpose = request.session.get("purpose")
+        via_email = request.session.get("otp_via_email", False)
 
         if not phone or not purpose:
             return redirect("Account:register")
 
         try:
-            OTPService.send_otp(phone=phone, purpose=purpose)
-
+            if via_email:
+                user = User.objects.filter(phone=phone).first()
+                email = user.email if user else None
+                OTPService.send_otp(
+                    phone=phone,
+                    purpose=purpose,
+                    email=email,
+                )
+            else:
+                OTPService.send_otp(
+                    phone=phone,
+                    purpose=purpose,
+                )
         except ValueError as e:
             warning(request, str(e))
 
         return redirect("Account:otp")
-
 
 # ─── Login With OTP ───────────────────────────────────────────────
 class LoginWithOTP(View):
@@ -307,6 +333,7 @@ class LoginWithOTP(View):
             )
 
         # ─── LoginWithOTP.post() ───
+        # ─── LoginWithOTP.post() ───
         if user and user.is_active:
             try:
                 is_email_input = '@' in username
@@ -319,6 +346,8 @@ class LoginWithOTP(View):
                 )
                 request.session["phone"] = user.phone
                 request.session["purpose"] = OTP.LOGIN
+                request.session["otp_identifier"] = username  # ← اضافه شد
+                request.session["otp_via_email"] = is_email_input  # ← اضافه شد
                 return redirect("Account:otp")
             except ValueError as e:
                 warning(request, str(e))
@@ -407,6 +436,7 @@ class ForgotPassword(View):
 
         # ─── Do not reveal information ───
         # ─── ForgotPassword.post() ───
+        # ─── ForgotPassword.post() ───
         if user:
             try:
                 is_email_input = '@' in username
@@ -419,6 +449,8 @@ class ForgotPassword(View):
                 )
                 request.session["phone"] = user.phone
                 request.session["purpose"] = OTP.RESET_PASSWORD
+                request.session["otp_identifier"] = username  # ← اضافه شد
+                request.session["otp_via_email"] = is_email_input  # ← اضافه شد
                 return redirect("Account:otp")
             except ValueError as e:
                 warning(request, str(e))

@@ -51,7 +51,7 @@ class OTPService:
             )
 
         code = randint(100000, 999999)
-        print(code)
+
         OTP.objects.filter(
             phone=phone,
             purpose=purpose,
@@ -86,6 +86,7 @@ class OTPService:
             ValueError: If send rate limit has been exceeded
         """
         otp, code = OTPService._generate_and_store_otp(phone, purpose)
+        print(code)
 
         # ─── Send SMS via Ghasedak ───
         sms = ghasedak_sms.SendOtpInput(
@@ -108,7 +109,6 @@ class OTPService:
         # sms_api.send_otp(sms)  # ← Enable in production
 
         logger.info("OTP sent via SMS to %s for purpose: %s", phone, purpose)
-
         return otp
 
     @staticmethod
@@ -139,8 +139,8 @@ class OTPService:
         subject = subject_map.get(purpose, "Verification Code")
 
         message = (
-            f"Hello,{phone}\n\n"
-            f"Your verification code is: {email}\n\n"
+            f"Hello,\n\n"
+            f"Your verification code is: {code}\n\n"
             f"This code expires in {AccountSettings.OTP_EXPIRE_MINUTES} minutes.\n"
             f"If you did not request this, please ignore this email."
         )

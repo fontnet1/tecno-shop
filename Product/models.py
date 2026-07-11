@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.signals import post_delete, pre_save
 from django.dispatch import receiver
+from tecno_shop import settings
 import os
 
 
@@ -41,6 +42,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+
+    def like_count(self):
+        return self.likes.count()
 
 
 class ProductImage(models.Model):
@@ -84,3 +88,53 @@ def delete_old_image(sender, instance, **kwargs):
     if old_file and old_file != instance.image:
         if os.path.isfile(old_file.path):
             os.remove(old_file.path)
+
+
+
+class Comment(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    text = models.TextField()
+    is_approved = models.BooleanField(default=False)  # مدیریت نظرات
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user} - {self.product.title}"
+
+
+class ProductLike(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('product', 'user')  # هر کاربر فقط یه بار لایک کنه
+
+    def __str__(self):
+        return f"{self.user} liked {self.product.title}"
+
+
+class CommentLike(models.Model):
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('comment', 'user')
+
+
+class CartItem(models.Model):
+    session_key = models.CharField(max_length=40)  # کلید سشن
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    color = models.ForeignKey(Color, on_delete=models.SET_NULL, null=True, blank=True)
+    size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('session_key', 'product', 'color', 'size')
+
+    def total_price(self):
+        return self.product.price * self.quantity

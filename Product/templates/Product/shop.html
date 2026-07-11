@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block main %}
+
+    <!-- Breadcrumb Start -->
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+            <div class="col-12">
+                <nav class="breadcrumb bg-light mb-30">
+                    <a class="breadcrumb-item text-dark" href="{% url 'home:home' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'products:product_list' %}">Shop</a>
+                    <span class="breadcrumb-item active">Shop List</span>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
+
+
+    <!-- Shop Start -->
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+
+            <!-- Shop Sidebar Start -->
+            <div class="col-lg-3 col-md-4">
+
+                <!-- Search Start -->
+                <h5 class="section-title position-relative text-uppercase mb-3">
+                    <span class="bg-secondary pr-3">Search</span>
+                </h5>
+                <div class="bg-light p-4 mb-30">
+                    <form method="get" id="search-form">
+                        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
+                        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
+                        {% if request.GET.color %}<input type="hidden" name="color" value="{{ request.GET.color }}">{% endif %}
+                        {% if request.GET.size %}<input type="hidden" name="size" value="{{ request.GET.size }}">{% endif %}
+                        {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
+                        <div class="input-group">
+                            <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search products...">
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <!-- Search End -->
+
+                <!-- Price Start -->
+                <h5 class="section-title position-relative text-uppercase mb-3">
+                    <span class="bg-secondary pr-3">Filter by price</span>
+                </h5>
+                <div class="bg-light p-4 mb-30">
+                    <form method="get" id="price-filter">
+                        {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+                        {% if request.GET.color %}<input type="hidden" name="color" value="{{ request.GET.color }}">{% endif %}
+                        {% if request.GET.size %}<input type="hidden" name="size" value="{{ request.GET.size }}">{% endif %}
+                        {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
+
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="price_range" value="all" id="price-all" class="custom-control-input"
+                                {% if not request.GET.min_price and not request.GET.max_price %}checked{% endif %}>
+                            <label class="custom-control-label" for="price-all">All Price</label>
+                            <span class="badge border font-weight-normal">{{ page_obj.paginator.count }}</span>
+                        </div>
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="price_range" value="0-100" id="price-1" class="custom-control-input"
+                                {% if request.GET.min_price == '0' and request.GET.max_price == '100' %}checked{% endif %}>
+                            <label class="custom-control-label" for="price-1">$0 - $100</label>
+                        </div>
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="price_range" value="100-200" id="price-2" class="custom-control-input"
+                                {% if request.GET.min_price == '100' and request.GET.max_price == '200' %}checked{% endif %}>
+                            <label class="custom-control-label" for="price-2">$100 - $200</label>
+                        </div>
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="price_range" value="200-300" id="price-3" class="custom-control-input"
+                                {% if request.GET.min_price == '200' and request.GET.max_price == '300' %}checked{% endif %}>
+                            <label class="custom-control-label" for="price-3">$200 - $300</label>
+                        </div>
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="price_range" value="300-400" id="price-4" class="custom-control-input"
+                                {% if request.GET.min_price == '300' and request.GET.max_price == '400' %}checked{% endif %}>
+                            <label class="custom-control-label" for="price-4">$300 - $400</label>
+                        </div>
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between">
+                            <input type="radio" name="price_range" value="400-999999" id="price-5" class="custom-control-input"
+                                {% if request.GET.min_price == '400' %}checked{% endif %}>
+                            <label class="custom-control-label" for="price-5">$400+</label>
+                        </div>
+
+                        <input type="hidden" name="min_price" id="min-price" value="{{ request.GET.min_price }}">
+                        <input type="hidden" name="max_price" id="max-price" value="{{ request.GET.max_price }}">
+                    </form>
+                </div>
+                <!-- Price End -->
+
+                <!-- Color Start -->
+                <h5 class="section-title position-relative text-uppercase mb-3">
+                    <span class="bg-secondary pr-3">Filter by color</span>
+                </h5>
+                <div class="bg-light p-4 mb-30">
+                    <form method="get" id="color-filter">
+                        {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+                        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
+                        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
+                        {% if request.GET.size %}<input type="hidden" name="size" value="{{ request.GET.size }}">{% endif %}
+                        {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
+
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="color" value="" id="color-all" class="custom-control-input"
+                                {% if not request.GET.color %}checked{% endif %}>
+                            <label class="custom-control-label" for="color-all">All Color</label>
+                            <span class="badge border font-weight-normal">{{ page_obj.paginator.count }}</span>
+                        </div>
+                        {% for color in colors %}
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="color" value="{{ color.id }}" id="color-{{ color.id }}" class="custom-control-input"
+                                {% if request.GET.color|stringformat:"s" == color.id|stringformat:"s" %}checked{% endif %}>
+                            <label class="custom-control-label" for="color-{{ color.id }}">{{ color.title }}</label>
+                            <span class="badge border font-weight-normal">{{ color.product_set.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </form>
+                </div>
+                <!-- Color End -->
+
+                <!-- Size Start -->
+                <h5 class="section-title position-relative text-uppercase mb-3">
+                    <span class="bg-secondary pr-3">Filter by size</span>
+                </h5>
+                <div class="bg-light p-4 mb-30">
+                    <form method="get" id="size-filter">
+                        {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+                        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
+                        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
+                        {% if request.GET.color %}<input type="hidden" name="color" value="{{ request.GET.color }}">{% endif %}
+                        {% if request.GET.ordering %}<input type="hidden" name="ordering" value="{{ request.GET.ordering }}">{% endif %}
+
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="size" value="" id="size-all" class="custom-control-input"
+                                {% if not request.GET.size %}checked{% endif %}>
+                            <label class="custom-control-label" for="size-all">All Size</label>
+                            <span class="badge border font-weight-normal">{{ page_obj.paginator.count }}</span>
+                        </div>
+                        {% for size in sizes %}
+                        <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
+                            <input type="radio" name="size" value="{{ size.id }}" id="size-{{ size.id }}" class="custom-control-input"
+                                {% if request.GET.size|stringformat:"s" == size.id|stringformat:"s" %}checked{% endif %}>
+                            <label class="custom-control-label" for="size-{{ size.id }}">{{ size.title }}</label>
+                            <span class="badge border font-weight-normal">{{ size.product_set.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </form>
+                </div>
+                <!-- Size End -->
+
+            </div>
+            <!-- Shop Sidebar End -->
+
+
+            <!-- Shop Product Start -->
+            <div class="col-lg-9 col-md-8">
+                <div class="row pb-3">
+                    <div class="col-12 pb-1">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex flex-wrap gap-1">
+                                <a href="?{% if request.GET.ordering != 'newest' %}ordering=newest{% endif %}{% for key, value in request.GET.items %}{% if key != 'ordering' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                    class="btn btn-sm btn-light{% if request.GET.ordering == 'newest' or not request.GET.ordering %} active{% endif %}">Latest</a>
+                                <a href="?ordering=cheapest{% for key, value in request.GET.items %}{% if key != 'ordering' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                    class="btn btn-sm btn-light{% if request.GET.ordering == 'cheapest' %} active{% endif %}">Cheapest</a>
+                                <a href="?ordering=expensive{% for key, value in request.GET.items %}{% if key != 'ordering' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                    class="btn btn-sm btn-light{% if request.GET.ordering == 'expensive' %} active{% endif %}">Most Expensive</a>
+                                <a href="?ordering=popular{% for key, value in request.GET.items %}{% if key != 'ordering' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                    class="btn btn-sm btn-light{% if request.GET.ordering == 'popular' %} active{% endif %}">Most Popular</a>
+                            </div>
+                            <div class="ml-2">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-toggle="dropdown">
+                                        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Loop -->
+                    {% for product in products %}
+                    <div class="col-lg-4 col-md-6 col-sm-6 pb-1">
+                        <div class="product-item bg-light mb-4">
+                            <div class="product-img position-relative overflow-hidden">
+                                {% if product.images.exists %}
+                                    <a href="{{ product.get_absolute_url }}">
+                                        <img class="img-fluid w-100" src="{{ product.images.first.image.url }}" alt="{{ product.title }}">
+                                    </a>
+                                {% else %}
+                                    <a href="{{ product.get_absolute_url }}">
+                                        <img class="img-fluid w-100" src="{% static 'img/default-product.png' %}" alt="{{ product.title }}">
+                                    </a>
+                                {% endif %}
+                                <div class="product-action">
+                                    <form method="post" action="{% url 'products:add_to_cart' product.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-dark btn-square" title="Add to Cart">
+                                            <i class="fa fa-shopping-cart"></i>
+                                        </button>
+                                    </form>
+                                    <a class="btn btn-outline-dark btn-square" href="{% url 'products:toggle_like' product.id %}" title="Like">
+                                        <i class="far fa-heart"></i>
+                                    </a>
+                                    <a class="btn btn-outline-dark btn-square" href="{{ product.id }}" title="View Details">
+                                        <i class="fa fa-search"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="text-center py-4">
+                                <a class="h6 text-decoration-none text-truncate d-block" href="{{ product.id }}">
+                                    {{ product.title }}
+                                </a>
+                                <div class="d-flex align-items-center justify-content-center mt-2">
+                                    <h5>${{ product.price }}</h5>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center mt-1">
+                                    <small class="text-muted">
+                                        <i class="far fa-heart"></i> {{ product.likes.count }} likes
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fa fa-box-open fa-3x text-muted mb-3 d-block"></i>
+                            <h5 class="text-muted">No products found.</h5>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-primary mt-2">Clear Filters</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                    <div class="col-12">
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'price_range' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'price_range' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'price_range' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+            <!-- Shop Product End -->
+
+        </div>
+    </div>
+    <!-- Shop End -->
+
+
+{% endblock %}
+
+{% block script %}
+<script>
+// Price filter - split range and submit
+document.querySelectorAll('#price-filter input[type="radio"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        var form = document.getElementById('price-filter');
+        if (this.value === 'all') {
+            document.getElementById('min-price').value = '';
+            document.getElementById('max-price').value = '';
+        } else {
+            var parts = this.value.split('-');
+            document.getElementById('min-price').value = parts[0];
+            document.getElementById('max-price').value = parts[1];
+        }
+        form.submit();
+    });
+});
+
+// Color filter - auto submit
+document.querySelectorAll('#color-filter input[type="radio"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        document.getElementById('color-filter').submit();
+    });
+});
+
+// Size filter - auto submit
+document.querySelectorAll('#size-filter input[type="radio"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        document.getElementById('size-filter').submit();
+    });
+});
+</script>
+{% endblock %}

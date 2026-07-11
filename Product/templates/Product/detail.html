@@ -1,22 +1,17 @@
 {% extends "base.html" %}
 {% load static %}
 {% load custom_filters %}
-    <!-- Navbar Start -->
 
 {% block main %}
-    <!-- Navbar End -->
 
-
-
-
-      <!-- Breadcrumb Start -->
+    <!-- Breadcrumb Start -->
     <div class="container-fluid">
         <div class="row px-xl-5">
             <div class="col-12">
                 <nav class="breadcrumb bg-light mb-30">
-                    <a class="breadcrumb-item text-dark" href="#">Home</a>
-                    <a class="breadcrumb-item text-dark" href="#">Shop</a>
-                    <span class="breadcrumb-item active">Shop Detail</span>
+                    <a class="breadcrumb-item text-dark" href="{% url 'home:home' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'products:product_list' %}">Shop</a>
+                    <span class="breadcrumb-item active">{{ product.title }}</span>
                 </nav>
             </div>
         </div>
@@ -27,148 +22,189 @@
     <!-- Shop Detail Start -->
     <div class="container-fluid pb-5">
         <div class="row px-xl-5">
+            <!-- Images -->
             <div class="col-lg-5 mb-30">
                 <div id="product-carousel" class="carousel slide" data-ride="carousel">
                     <div class="carousel-inner bg-light">
-                         {% for image in product.images.all %}
-                        {% if image.is_primary %}
-                           <div class= "carousel-item active"  >
-                            {% else %}
-                            <div class="carousel-item">
-                            {% endif %}
-                                <img class="w-100 h-100" src="{{ image.image.url }}" alt="{{ image.alt }}">
+                        {% for image in product.images.all %}
+                            <div class="carousel-item{% if image.is_primary or forloop.first %} active{% endif %}">
+                                <img class="w-100" src="{{ image.image.url }}" alt="{{ image.alt_text }}">
                             </div>
                         {% endfor %}
                     </div>
+                    {% if product.images.all.count > 1 %}
                     <a class="carousel-control-prev" href="#product-carousel" data-slide="prev">
                         <i class="fa fa-2x fa-angle-left text-dark"></i>
                     </a>
                     <a class="carousel-control-next" href="#product-carousel" data-slide="next">
                         <i class="fa fa-2x fa-angle-right text-dark"></i>
                     </a>
+                    {% endif %}
                 </div>
             </div>
 
+            <!-- Product Info -->
             <div class="col-lg-7 h-auto mb-30">
                 <div class="h-100 bg-light p-30">
                     <h3>{{ product.title }}</h3>
-                    <h3 class="font-weight-semi-bold mb-4">{{ product.price }}$</h3>
-                    <p class="mb-4">{{ product.description|slice:":20" }}...</p>
-                    <div class="d-flex mb-3">
-                        {% if product.size.all %}
-                            <strong class="text-dark mr-3">Sizes:</strong>
-                            <form>
-                            {% for size in product.size.all %}
-
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" class="custom-control-input" id="size-{{ forloop.counter }}" name="size">
-                                <label class="custom-control-label" for="size-{{ forloop.counter }}">{{ size.title }}</label>
-                            </div>
-                            {% endfor %}
-                             </form>
-                        {% endif %}
-
-
-                    </div>
-                    <div class="d-flex mb-4">
-                        <strong class="text-dark mr-3"></strong>
-                        {% if product.color.all %}
-                            <strong class="text-dark mr-3">Colors:</strong>
-                            <form>
-                            {% for Color in product.color.all %}
-
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" class="custom-control-input" id="color-{{ forloop.counter }}" name="color">
-                                <label class="custom-control-label" for="color-{{ forloop.counter }}">{{ Color.title }}</label>
-                            </div>
-                            {% endfor %}
-                             </form>
-                        {% endif %}
-
-
-                    </div>
-                    <div class="d-flex align-items-center mb-4 pt-2">
-                        <div class="input-group quantity mr-3" style="width: 130px;">
-                            <div class="input-group-btn">
-                                <button class="btn btn-primary btn-minus">
-                                    <i class="fa fa-minus"></i>
-                                </button>
-                            </div>
-                            <input type="text" class="form-control bg-secondary border-0 text-center" value="1">
-                            <div class="input-group-btn">
-                                <button class="btn btn-primary btn-plus">
-                                    <i class="fa fa-plus"></i>
-                                </button>
-                            </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <h3 class="font-weight-semi-bold mb-0">{{ product.price }}$</h3>
+                        <div class="ml-3">
+                            <a href="{% url 'products:toggle_like' product.id %}" class="btn btn-sm btn-outline-dark">
+                                <i class="fa{% if is_liked %}s{% else %}r{% endif %} fa-heart{% if is_liked %} text-danger{% endif %}"></i>
+                                {{ product.likes.count }}
+                            </a>
                         </div>
-                        <button class="btn btn-primary px-3"><i class="fa fa-shopping-cart mr-1"></i> Add To
-                            Cart</button>
                     </div>
+                    <p class="mb-4">{{ product.description }}</p>
+
+                    <!-- Add to Cart Form -->
+                    <form method="post" action="{% url 'products:add_to_cart' product.id %}" id="add-to-cart-form">
+                        {% csrf_token %}
+
+                        <div class="d-flex mb-3">
+                            {% if product.size.exists %}
+                                <strong class="text-dark mr-3">Sizes:</strong>
+                                {% for size in product.size.all %}
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" class="custom-control-input" id="size-{{ size.id }}" name="size" value="{{ size.id }}"
+                                            {% if forloop.first %}checked{% endif %}>
+                                        <label class="custom-control-label" for="size-{{ size.id }}">{{ size.title }}</label>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex mb-4">
+                            {% if product.color.exists %}
+                                <strong class="text-dark mr-3">Colors:</strong>
+                                {% for color in product.color.all %}
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" class="custom-control-input" id="color-{{ color.id }}" name="color" value="{{ color.id }}"
+                                            {% if forloop.first %}checked{% endif %}>
+                                        <label class="custom-control-label" for="color-{{ color.id }}">{{ color.title }}</label>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex align-items-center mb-4 pt-2">
+                            <div class="input-group quantity mr-3" style="width: 130px;">
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-primary btn-minus">
+                                        <i class="fa fa-minus"></i>
+                                    </button>
+                                </div>
+                                <input type="number" name="quantity" class="form-control bg-secondary border-0 text-center" value="1" min="1">
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-primary btn-plus">
+                                        <i class="fa fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary px-3">
+                                <i class="fa fa-shopping-cart mr-1"></i> Add To Cart
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
+
+        <!-- Tabs -->
         <div class="row px-xl-5">
             <div class="col">
                 <div class="bg-light p-30">
                     <div class="nav nav-tabs mb-4">
                         <a class="nav-item nav-link text-dark active" data-toggle="tab" href="#tab-pane-1">Description</a>
                         <a class="nav-item nav-link text-dark" data-toggle="tab" href="#tab-pane-2">Information</a>
-                        <a class="nav-item nav-link text-dark" data-toggle="tab" href="#tab-pane-3">Reviews (0)</a>
+                        <a class="nav-item nav-link text-dark" data-toggle="tab" href="#tab-pane-3">Reviews ({{ comments.count }})</a>
                     </div>
                     <div class="tab-content">
+                        <!-- Description -->
                         <div class="tab-pane fade show active" id="tab-pane-1">
                             <h4 class="mb-3">Product Description</h4>
-                            {{ product.description|break_after_words:44 }}
+                            <p>{{ product.description }}</p>
                         </div>
+
+                        <!-- Information -->
                         <div class="tab-pane fade" id="tab-pane-2">
                             <h4 class="mb-3">Additional Information</h4>
                             <div class="row">
-                                {% for foo in product.informations.all %}
-
-
+                                {% for info in product.informations.all %}
                                 <div class="col-md-6">
                                     <ul class="list-group list-group-flush">
-                                        <li class="list-group-item px-0">
-                                            {{ foo.txte }}
-                                        </li>
-                                      </ul>
+                                        <li class="list-group-item px-0">{{ info.txte }}</li>
+                                    </ul>
                                 </div>
-                                    {% endfor %}
-
+                                {% endfor %}
                             </div>
+                            {% if not product.informations.exists %}
+                                <p class="text-muted">No additional information available.</p>
+                            {% endif %}
                         </div>
+
+                        <!-- Reviews -->
                         <div class="tab-pane fade" id="tab-pane-3">
                             <div class="row">
+                                <!-- Comments List -->
                                 <div class="col-md-6">
-                                    <h4 class="mb-4">1 review for "Product Name"</h4>
+
+                                    {% for comment in comments %}
                                     <div class="media mb-4">
-                                        <img src="img/user.jpg" alt="Image" class="img-fluid mr-3 mt-1" style="width: 45px;">
+                                        <div class="mr-3 mt-1 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                            style="width: 45px; height: 45px; font-weight: bold;">
+                                            {{ comment.user.username.0|upper }}
+                                        </div>
                                         <div class="media-body">
-                                            <h6>John Doe<small> - <i>01 Jan 2045</i></small></h6>
-                                            <p>Diam amet duo labore stet elitr ea clita ipsum, tempor labore accusam ipsum et no at. Kasd diam tempor rebum magna dolores sed sed eirmod ipsum.</p>
+                                            <h6>{{ comment.user.username }}
+                                                <small> - <i>{{ comment.created_at|date:"M d, Y" }}</i></small>
+                                            </h6>
+                                            <p class="mb-1">{{ comment.text }}</p>
+
+                                            <!-- Replies -->
+                                            {% for reply in comment.replies.all %}
+                                                {% if reply.is_approved %}
+                                                <div class="ml-4 mt-2 bg-white p-3 rounded">
+                                                    <h6 class="mb-1">{{ reply.user.username }}
+                                                        <small> - <i>{{ reply.created_at|date:"M d, Y" }}</i></small>
+                                                    </h6>
+                                                    <p class="mb-0">{{ reply.text }}</p>
+                                                </div>
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            {% if user.is_authenticated %}
+                                            <a href="#" class="text-primary small mt-1 d-inline-block" onclick="document.getElementById('parent-id').value='{{ comment.id }}'; document.getElementById('tab-pane-3').scrollIntoView(); return false;">
+                                                Reply
+                                            </a>
+                                            {% endif %}
                                         </div>
                                     </div>
+                                    {% empty %}
+                                    <p class="text-muted">No reviews yet.</p>
+                                    {% endfor %}
                                 </div>
+
+                                <!-- Comment Form -->
                                 <div class="col-md-6">
+                                    {% if user.is_authenticated %}
                                     <h4 class="mb-4">Leave a review</h4>
-                                    <small>Your email address will not be published. Required fields are marked *</small>
-                                    <form>
+                                    <form method="post" action="{% url 'products:add_comment' product.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="parent" id="parent-id" value="">
                                         <div class="form-group">
                                             <label for="message">Your Review *</label>
-                                            <textarea id="message" cols="30" rows="5" class="form-control"></textarea>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="name">Your Name *</label>
-                                            <input type="text" class="form-control" id="name">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="email">Your Email *</label>
-                                            <input type="email" class="form-control" id="email">
+                                            <textarea name="text" id="message" cols="30" rows="5" class="form-control" required></textarea>
                                         </div>
                                         <div class="form-group mb-0">
-                                            <input type="submit" value="Leave Your Review" class="btn btn-primary px-3">
+                                            <button type="submit" class="btn btn-primary px-3">Leave Your Review</button>
                                         </div>
                                     </form>
+                                    {% else %}
+                                    <h4 class="mb-4">Leave a review</h4>
+                                    <p class="text-muted">Please <a href="{% url 'Account:login' %}">sign in</a> to leave a review.</p>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -180,104 +216,84 @@
     <!-- Shop Detail End -->
 
 
-    <!-- Products Start -->
+    <!-- Related Products Start -->
+    {% if related_products %}
     <div class="container-fluid py-5">
-        <h2 class="section-title position-relative text-uppercase mx-xl-5 mb-4"><span class="bg-secondary pr-3">You May Also Like</span></h2>
+        <h2 class="section-title position-relative text-uppercase mx-xl-5 mb-4">
+            <span class="bg-secondary pr-3">You May Also Like</span>
+        </h2>
         <div class="row px-xl-5">
-            <div class="col">
-                <div class="owl-carousel related-carousel">
-                    <div class="product-item bg-light">
-                        <div class="product-img position-relative overflow-hidden">
-                            <img class="img-fluid w-100" src="img/product-1.jpg" alt="">
-                            <div class="product-action">
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a>
-                            </div>
-                        </div>
-                        <div class="text-center py-4">
-                            <a class="h6 text-decoration-none text-truncate" href="">Product Name Goes Here</a>
-                            <div class="d-flex align-items-center justify-content-center mt-2">
-                                <h5>$123.00</h5><h6 class="text-muted ml-2"><del>$123.00</del></h6>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div class="product-item bg-light">
-                        <div class="product-img position-relative overflow-hidden">
-                            <img class="img-fluid w-100" src="img/product-2.jpg" alt="">
-                            <div class="product-action">
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a>
-                            </div>
-                        </div>
-                        <div class="text-center py-4">
-                            <a class="h6 text-decoration-none text-truncate" href="">Product Name Goes Here</a>
-                            <div class="d-flex align-items-center justify-content-center mt-2">
-                                <h5>$123.00</h5><h6 class="text-muted ml-2"><del>$123.00</del></h6>
-                            </div>
-
+            {% for product in related_products %}
+            <div class="col-lg-3 col-md-4 col-sm-6 pb-1">
+                <div class="product-item bg-light">
+                    <div class="product-img position-relative overflow-hidden">
+                        {% if product.images.exists %}
+                            <a href="{{ product.get_absolute_url }}">
+                                <img class="img-fluid w-100" src="{{ product.images.first.image.url }}" alt="{{ product.title }}">
+                            </a>
+                        {% else %}
+                            <a href="{{ product.get_absolute_url }}">
+                                <img class="img-fluid w-100" src="{% static 'img/default-product.png' %}" alt="{{ product.title }}">
+                            </a>
+                        {% endif %}
+                        <div class="product-action">
+                            <form method="post" action="{% url 'products:add_to_cart' product.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-dark btn-square"><i class="fa fa-shopping-cart"></i></button>
+                            </form>
+                            <a class="btn btn-outline-dark btn-square" href="{% url 'products:toggle_like' product.id %}"><i class="far fa-heart"></i></a>
+                            <a class="btn btn-outline-dark btn-square" href="{{ product.get_absolute_url }}"><i class="fa fa-search"></i></a>
                         </div>
                     </div>
-                    <div class="product-item bg-light">
-                        <div class="product-img position-relative overflow-hidden">
-                            <img class="img-fluid w-100" src="img/product-3.jpg" alt="">
-                            <div class="product-action">
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a>
-                            </div>
+                    <div class="text-center py-4">
+                        <a class="h6 text-decoration-none text-truncate d-block" href="{{ product.get_absolute_url }}">{{ product.title }}</a>
+                        <div class="d-flex align-items-center justify-content-center mt-2">
+                            <h5>${{ product.price }}</h5>
                         </div>
-                        <div class="text-center py-4">
-                            <a class="h6 text-decoration-none text-truncate" href="">Product Name Goes Here</a>
-                            <div class="d-flex align-items-center justify-content-center mt-2">
-                                <h5>$123.00</h5><h6 class="text-muted ml-2"><del>$123.00</del></h6>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div class="product-item bg-light">
-                        <div class="product-img position-relative overflow-hidden">
-                            <img class="img-fluid w-100" src="img/product-4.jpg" alt="">
-                            <div class="product-action">
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a>
-                            </div>
-                        </div>
-                        <div class="text-center py-4">
-                            <a class="h6 text-decoration-none text-truncate" href="">Product Name Goes Here</a>
-                            <div class="d-flex align-items-center justify-content-center mt-2">
-                                <h5>$123.00</h5><h6 class="text-muted ml-2"><del>$123.00</del></h6>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="product-item bg-light">
-                        <div class="product-img position-relative overflow-hidden">
-                            <img class="img-fluid w-100" src="img/product-5.jpg" alt="">
-                            <div class="product-action">
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-search"></i></a>
-                            </div>
-                        </div>
-                        <div class="text-center py-4">
-                            <a class="h6 text-decoration-none text-truncate" href="">Product Name Goes Here</a>
-                            <div class="d-flex align-items-center justify-content-center mt-2">
-                                <h5>$123.00</h5><h6 class="text-muted ml-2"><del>$123.00</del></h6>
-                            </div>
-
+                        <div class="d-flex align-items-center justify-content-center mt-1">
+                            <small class="text-muted"><i class="far fa-heart"></i> {{ product.likes.count }}</small>
                         </div>
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
     </div>
-    <!-- Products End -->
+    {% endif %}
+    <!-- Related Products End -->
+
+{% endblock %}
+
+{% block script %}
+<script>
+// Quantity +/-
+document.querySelector('.btn-minus').addEventListener('click', function() {
+    var input = document.querySelector('input[name="quantity"]');
+    var val = parseInt(input.value) || 1;
+    if (val > 1) input.value = val - 1;
+});
+document.querySelector('.btn-plus').addEventListener('click', function() {
+    var input = document.querySelector('input[name="quantity"]');
+    var val = parseInt(input.value) || 1;
+    input.value = val + 1;
+});
+
+// Like toggle (AJAX)
+document.querySelector('a[href*="toggle_like"]')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    fetch(this.href, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        var icon = this.querySelector('i');
+        if (data.is_liked) {
+            icon.className = 'fas fa-heart text-danger';
+        } else {
+            icon.className = 'far fa-heart';
+        }
+        this.querySelector('i').nextSibling.textContent = ' ' + data.like_count;
+    });
+});
+</script>
 {% endblock %}

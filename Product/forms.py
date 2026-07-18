@@ -2,17 +2,20 @@ from django import forms
 from .models import Product, Comment, ProductImage,Size,Color
 
 
+from django import forms
+from .models import Comment
+
+
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
-        fields = ['text', 'parent']
+        fields = ["text"]
         widgets = {
-            'text': forms.Textarea(attrs={
-                'class': 'w-full p-3 border rounded-lg resize-none',
-                'rows': 4,
-                'placeholder': 'نظر خود را بنویسید...',
+            "text": forms.Textarea(attrs={
+                "class": "w-full p-3 border rounded-lg resize-none",
+                "rows": 4,
+                "placeholder": "Write your review...",
             }),
-            'parent': forms.HiddenInput(),
         }
 
 

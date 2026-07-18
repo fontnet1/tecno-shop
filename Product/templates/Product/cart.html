@@ -53,10 +53,12 @@
                                 </td>
                                 <td class="align-middle">${{ item.total }}</td>
                                 <td class="align-middle">
-                                    <a href="{% url 'products:cart_remove' item.key %}"
-                                        class="btn btn-sm btn-danger">
-                                        <i class="fa fa-times"></i>
-                                    </a>
+                                    <form method="post" action="{% url 'products:cart_remove' item.key %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -71,9 +73,12 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="fa fa-sync-alt mr-2"></i> Update Cart
                             </button>
-                            <a href="{% url 'products:cart_clear' %}" class="btn btn-outline-danger">
-                                <i class="fa fa-trash mr-2"></i> Clear Cart
-                            </a>
+                           <form method="post" action="{% url 'products:cart_clear' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="fa fa-trash mr-2"></i> Clear Cart
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </form>

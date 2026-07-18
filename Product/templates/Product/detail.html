@@ -50,10 +50,14 @@
                     <div class="d-flex align-items-center mb-3">
                         <h3 class="font-weight-semi-bold mb-0">{{ product.price }}$</h3>
                         <div class="ml-3">
-                            <a href="{% url 'products:toggle_like' product.id %}" class="btn btn-sm btn-outline-dark">
-                                <i class="fa{% if is_liked %}s{% else %}r{% endif %} fa-heart{% if is_liked %} text-danger{% endif %}"></i>
-                                {{ product.likes.count }}
-                            </a>
+                           <form method="post" action="{% url 'products:toggle_like' product.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-dark like-btn">
+
+                                    <i class="fa{% if is_liked %}s{% else %}r{% endif %} fa-heart{% if is_liked %} text-danger{% endif %}"></i>
+                                    <span class="like-count">{{ product.likes.count }}</span>
+                                </button>
+                            </form>
                         </div>
                     </div>
                     <p class="mb-4">{{ product.description }}</p>
@@ -134,7 +138,7 @@
                                 {% for info in product.informations.all %}
                                 <div class="col-md-6">
                                     <ul class="list-group list-group-flush">
-                                        <li class="list-group-item px-0">{{ info.txte }}</li>
+                                        <li class="list-group-item px-0">{{ info.text }}</li>
                                     </ul>
                                 </div>
                                 {% endfor %}
@@ -279,20 +283,30 @@ document.querySelector('.btn-plus').addEventListener('click', function() {
 });
 
 // Like toggle (AJAX)
-document.querySelector('a[href*="toggle_like"]')?.addEventListener('click', function(e) {
+// Like toggle (AJAX via form submit)
+document.querySelector('.like-btn')?.addEventListener('click', function(e) {
     e.preventDefault();
-    fetch(this.href, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    var form = this.closest('form');
+    var btn = this;
+    var csrfInput = form.querySelector('[name="csrfmiddlewaretoken"]');
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfInput ? csrfInput.value : '',
+        },
+        body: new FormData(form),
     })
     .then(r => r.json())
     .then(data => {
-        var icon = this.querySelector('i');
+        var icon = btn.querySelector('i');
         if (data.is_liked) {
             icon.className = 'fas fa-heart text-danger';
         } else {
             icon.className = 'far fa-heart';
         }
-        this.querySelector('i').nextSibling.textContent = ' ' + data.like_count;
+        btn.querySelector('.like-count').textContent = ' ' + data.like_count;
     });
 });
 </script>

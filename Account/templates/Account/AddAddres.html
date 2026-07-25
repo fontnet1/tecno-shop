@@ -1,0 +1,24 @@
+ {% extends "base.html" %}
+ {% load static %}
+{% block main %}
+
+ <div class="container-fluid">
+        <div class="mr-auto">
+            <div class="">
+                <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Billing Address</span></h5>
+                <div class="bg-light p-30 mb-5">
+                    <div class="row">
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ form.errors }}
+                            {{ form.as_p}}
+                            <button type="submit" class="form-control btn btn-primary">submit</button>
+                        </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+ </div>
+ {% endblock %}

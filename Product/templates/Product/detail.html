@@ -270,44 +270,53 @@
 
 {% block script %}
 <script>
-// Quantity +/-
-document.querySelector('.btn-minus').addEventListener('click', function() {
-    var input = document.querySelector('input[name="quantity"]');
-    var val = parseInt(input.value) || 1;
-    if (val > 1) input.value = val - 1;
-});
-document.querySelector('.btn-plus').addEventListener('click', function() {
-    var input = document.querySelector('input[name="quantity"]');
-    var val = parseInt(input.value) || 1;
-    input.value = val + 1;
-});
+document.addEventListener('DOMContentLoaded', function() {
+    // Quantity +/-
+    var quantityInput = document.querySelector('#add-to-cart-form input[name="quantity"]');
 
-// Like toggle (AJAX)
-// Like toggle (AJAX via form submit)
-document.querySelector('.like-btn')?.addEventListener('click', function(e) {
-    e.preventDefault();
-    var form = this.closest('form');
-    var btn = this;
-    var csrfInput = form.querySelector('[name="csrfmiddlewaretoken"]');
-
-    fetch(form.action, {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': csrfInput ? csrfInput.value : '',
-        },
-        body: new FormData(form),
-    })
-    .then(r => r.json())
-    .then(data => {
-        var icon = btn.querySelector('i');
-        if (data.is_liked) {
-            icon.className = 'fas fa-heart text-danger';
-        } else {
-            icon.className = 'far fa-heart';
-        }
-        btn.querySelector('.like-count').textContent = ' ' + data.like_count;
+    document.querySelectorAll('#add-to-cart-form .btn-minus').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var val = parseInt(quantityInput.value) || 1;
+            if (val > 1) quantityInput.value = val - 1;
+        });
     });
+
+    document.querySelectorAll('#add-to-cart-form .btn-plus').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var val = parseInt(quantityInput.value) || 1;
+            quantityInput.value = val + 1;
+        });
+    });
+
+    // Like toggle
+    var likeBtn = document.querySelector('.like-btn');
+    if (likeBtn) {
+        likeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var form = this.closest('form');
+            var btn = this;
+            var csrfInput = form.querySelector('[name="csrfmiddlewaretoken"]');
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfInput ? csrfInput.value : '',
+                },
+                body: new FormData(form),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var icon = btn.querySelector('i');
+                if (data.is_liked) {
+                    icon.className = 'fas fa-heart text-danger';
+                } else {
+                    icon.className = 'far fa-heart';
+                }
+                btn.querySelector('.like-count').textContent = ' ' + data.like_count;
+            });
+        });
+    }
 });
 </script>
 {% endblock %}

@@ -116,3 +116,16 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"{self.phone} - {self.get_purpose_display()}"
+
+
+class AddAddress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="adresses")
+    full_name = models.CharField(max_length=255, verbose_name="Full Name")
+    email = models.EmailField(max_length=255, verbose_name="Email Address")
+    phone = models.CharField(max_length=11, verbose_name="Phone Number")
+    address = models.CharField(max_length=255, verbose_name="Address")
+    city = models.CharField(max_length=255, verbose_name="City")
+    postal_code = models.CharField(max_length=255, verbose_name="Postal Code")
+
+    def __str__(self):
+        return  self.user.phone

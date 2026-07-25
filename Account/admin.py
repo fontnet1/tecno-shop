@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .forms import UserCreationForm, UserChangeForm
-from Account.models import User, OTP
+from Account.models import User, AddAddress
 
 
 class UserAdmin(BaseUserAdmin):
@@ -34,3 +34,4 @@ class UserAdmin(BaseUserAdmin):
 # Now register the new UserAdmin...
 admin.site.register(User, UserAdmin)
 # OTP should not be registered in admin panel — contains sensitive codes
+admin.site.register(AddAddress)

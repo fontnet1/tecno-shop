@@ -1,14 +1,14 @@
 import logging
-
 from django.db.models import Count, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, CreateView,View
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 
-from .models import Product, Comment, ProductLike, Color, Size
+from . import cart
+from .models import Product, Comment, ProductLike, Color, Size, Order, OrderItem, Discount,UsDiscount
 from .forms import CommentForm
 from .cart import Cart
 
@@ -110,7 +110,64 @@ class ProductDetailView(DetailView):
 
         return context
 
+class OrderCreationsView(View):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated is False :
+            return redirect("home:home")
 
+
+
+        return super().dispatch(request, *args, **kwargs)
+    def get(self,request):
+
+        cart = Cart(request)
+        order = Order.objects.create(user=request.user,total_price=cart.get_total_price())
+        if order:
+            for item in cart:
+                OrderItem.objects.create(order=order, product_id=item['product_id'], quantity=item['quantity']
+                                         ,color_id=item['color_id'], price=item['price'],size_id=item['size_id'])
+
+            cart.clear()
+            return redirect("products:order_detail", order.id)
+        return redirect("home:home")
+
+class OrderDetail(View):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated is False :
+            return redirect("home:home")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get (self, request, id):
+        order = get_object_or_404(Order, id=id, user=request.user)
+        if order:
+            return render(request,"Product/order_detale.html",{"order":order})
+        return redirect("home:home")
+
+class ApplyDiscountView(View):
+
+    def post(self, request,id):
+        code = request.POST.get("discount_code")
+        order = get_object_or_404(Order, id=id, user=request.user)
+        discount_code = get_object_or_404(Discount, name=code)
+        if(discount_code.quantity==0 or discount_code.is_active== False or discount_code.is_valid()==False ):
+            messages.error(request, "Coupon expired.")
+            return redirect("products:order_detail", order.id)
+        exists = UsDiscount.objects.filter(
+            user=request.user,
+            discount=discount_code,
+        ).exists()
+
+        if exists:
+            messages.error(request, "Code already registered")
+            return redirect("products:order_detail", order.id)
+
+        order.total_price -= order.total_price * discount_code.discount/100
+        order.save()
+        UsDiscount.objects.create(user=request.user, discount_id=discount_code.id)
+        discount_code.quantity-=1
+        discount_code.save()
+        messages.error(request, "Coupon applied")
+        return redirect("products:order_detail", order.id)
 # ─── Comments ──────────────────────────────────────────────
 @login_required
 def add_comment(request, pk):

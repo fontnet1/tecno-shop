@@ -4,7 +4,7 @@ from django.dispatch import receiver
 from django.conf import settings
 import os
 
-from Account.models import User
+from Account.models import User,AddAddress
 
 
 class Size(models.Model):
@@ -141,20 +141,50 @@ class CommentLike(models.Model):
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="item")
-    adress = models.TextField(max_length=300, verbose_name="Adress")
-    email = models.EmailField(max_length=300, verbose_name="Email")
-    phone = models.CharField(max_length=20, verbose_name="Phone")
     created_at = models.DateTimeField(auto_now_add=True)
+    total_price = models.FloatField(default=0, verbose_name="Total")
     is_paid = models.BooleanField(default=False, verbose_name="Paid")
     def __str__(self):
-        return self.user.username
+        return self.user.phone
 
 
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    size = models.ForeignKey(Size, on_delete=models.CASCADE)
-    color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    size = models.ForeignKey(Size, on_delete=models.CASCADE,verbose_name="sizes")
+    color = models.ForeignKey(Color, on_delete=models.CASCADE,verbose_name="colors")
     quantity = models.PositiveIntegerField(default=1, verbose_name="Quantity")
-    price = models.PositiveIntegerField(default=0, verbose_name="Price")
+    price = models.FloatField(default=0, verbose_name="Price")
+
+
+class Discount(models.Model):
+
+    name=models.CharField(max_length=50, verbose_name="Name")
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Quantity")
+    discount = models.IntegerField(default=0, verbose_name="Discount")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    valid_from = models.DateTimeField()
+    valid_until = models.DateTimeField()
+    is_active=models.BooleanField(default=True, verbose_name="Active")
+    def __str__(self):
+        return self.name
+    def is_valid(self):
+        from django.utils import timezone
+        now = timezone.now()
+        return (
+                self.is_active and
+                self.valid_from <= now <= self.valid_until
+        )
+
+class UsDiscount(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="users")
+    discount = models.ForeignKey(Discount, on_delete=models.CASCADE,related_name="discounts")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "discount"],
+                name="unique_user_discount",
+            )
+        ]

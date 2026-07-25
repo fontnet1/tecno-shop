@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Product, ProductImage, Comment, Information,
-    Size, Color, ProductLike,Order,OrderItem
+    Size, Color, UsDiscount,Order,OrderItem,Discount
 )
 
 
@@ -86,5 +86,12 @@ class OrderItemInline(admin.StackedInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("user","adress", "phone")
+    list_display = ("user",)
     inlines = [OrderItemInline]
+
+@admin.register(Discount)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ( "discount","quantity","name" )
+@admin.register(UsDiscount)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("user", )

@@ -8,6 +8,7 @@ from .forms import (
     LoginOTPForm,
     ResetPasswordForm,
     ForgotPasswordForm,
+    AddAddressForm,
 )
 from django.db.models import Q
 from django.contrib.auth import login, logout
@@ -346,8 +347,8 @@ class LoginWithOTP(View):
                 )
                 request.session["phone"] = user.phone
                 request.session["purpose"] = OTP.LOGIN
-                request.session["otp_identifier"] = username  # ← اضافه شد
-                request.session["otp_via_email"] = is_email_input  # ← اضافه شد
+                request.session["otp_identifier"] = username
+                request.session["otp_via_email"] = is_email_input
                 return redirect("Account:otp")
             except ValueError as e:
                 warning(request, str(e))
@@ -485,3 +486,25 @@ class ChoosePasswordOrCode(View):
                 "nameform": "Forgot Password",
             },
         )
+
+class AddAddress(View):
+
+
+    def get(self, request):
+        form = AddAddressForm()
+        return render(request,"Account/AddAddres.html",context={"form": form})
+
+    def post(self, request):
+        form=AddAddressForm(request.POST)
+        if form.is_valid():
+            Addres=form.save(commit=False)
+            Addres.user=request.user
+            Addres.save()
+            next_page = request.GET.get("next")
+            if next_page:
+                return redirect(next_page)
+
+
+        return render(
+            request,
+            "Account/AddAddres.html",context={"form": form}, )

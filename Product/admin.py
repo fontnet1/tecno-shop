@@ -1,7 +1,9 @@
 from django.contrib import admin
+from django.utils.html import format_html
+
 from .models import (
     Product, ProductImage, Comment, Information,
-    Size, Color, UsDiscount,Order,OrderItem,Discount
+    Size, Color, UsDiscount, Order, OrderItem, Discount,
 )
 
 
@@ -23,7 +25,8 @@ class InformationInline(admin.StackedInline):
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("title", "price", "like_count", "comment_count")
     list_filter = ("size", "color")
-    search_fields = ("title", "description")
+    search_fields = ("title", "description", "slug")
+    prepopulated_fields = {"slug": ("title",)}
     ordering = ("-id",)
     inlines = [ProductImageInline, InformationInline]
 
@@ -40,22 +43,26 @@ class ProductAdmin(admin.ModelAdmin):
 class ProductImageAdmin(admin.ModelAdmin):
     list_display = ("product", "alt_text", "is_primary", "order")
     list_filter = ("is_primary",)
+    search_fields = ("product__title", "alt_text")
 
 
 @admin.register(Information)
 class InformationAdmin(admin.ModelAdmin):
     list_display = ("product", "text", "order")
     list_filter = ("product",)
+    search_fields = ("text",)
 
 
 @admin.register(Size)
 class SizeAdmin(admin.ModelAdmin):
     list_display = ("title",)
+    search_fields = ("title",)
 
 
 @admin.register(Color)
 class ColorAdmin(admin.ModelAdmin):
     list_display = ("title",)
+    search_fields = ("title",)
 
 
 @admin.register(Comment)
@@ -79,19 +86,35 @@ class CommentAdmin(admin.ModelAdmin):
         queryset.update(is_approved=False)
 
 
-
 class OrderItemInline(admin.StackedInline):
     model = OrderItem
     extra = 1
+    readonly_fields = ("price",)
+
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("user",)
+    list_display = ("id", "user", "total_price", "is_paid", "item_count", "created_at")
+    list_filter = ("is_paid", "created_at")
+    search_fields = ("user__phone", "user__full_name", "id")
+    readonly_fields = ("total_price", "created_at")
     inlines = [OrderItemInline]
 
+    @admin.display(description="Items")
+    def item_count(self, obj):
+        return obj.items.count()
+
+
 @admin.register(Discount)
-class OrderAdmin(admin.ModelAdmin):
-    list_display = ( "discount","quantity","name" )
+class DiscountAdmin(admin.ModelAdmin):
+    list_display = ("name", "discount", "quantity", "is_active", "valid_from", "valid_until")
+    list_filter = ("is_active",)
+    search_fields = ("name",)
+    readonly_fields = ("created_at",)
+
+
 @admin.register(UsDiscount)
-class OrderAdmin(admin.ModelAdmin):
-    list_display = ("user", )
+class UsDiscountAdmin(admin.ModelAdmin):
+    list_display = ("user", "discount")
+    list_filter = ("discount",)
+    search_fields = ("user__phone", "user__full_name", "discount__name")

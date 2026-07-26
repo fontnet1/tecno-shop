@@ -199,16 +199,20 @@
                                     </a>
                                 {% endif %}
                                 <div class="product-action">
-                                    <form method="post" action="{% url 'products:add_to_cart' product.id %}">
+                                    <form method="post" action="{% url 'products:add_to_cart' product.id %}" class="d-inline">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-outline-dark btn-square" title="Add to Cart">
                                             <i class="fa fa-shopping-cart"></i>
                                         </button>
                                     </form>
-                                    <a class="btn btn-outline-dark btn-square" href="{% url 'products:toggle_like' product.id %}" title="Like">
-                                        <i class="far fa-heart"></i>
-                                    </a>
-                                        <a class="btn btn-outline-dark btn-square" href="{{ product.get_absolute_url }}" title="View Details">                                        <i class="fa fa-search"></i>
+                                    <form method="post" action="{% url 'products:toggle_like' product.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-dark btn-square" title="Like">
+                                            <i class="far fa-heart"></i>
+                                        </button>
+                                    </form>
+                                    <a class="btn btn-outline-dark btn-square" href="{{ product.get_absolute_url }}" title="View Details">
+                                        <i class="fa fa-search"></i>
                                     </a>
                                 </div>
                             </div>

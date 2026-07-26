@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 app_name = "products"
@@ -9,12 +10,16 @@ urlpatterns = [
     path("add_to_cart/<int:pk>/", views.add_to_cart, name="add_to_cart"),
     path("toggle_like/<int:pk>/", views.toggle_like, name="toggle_like"),
     path("add_comment/<int:pk>/", views.add_comment, name="add_comment"),
-    path("comment_reply/<int:pk>/<int:comment_id>/", views.comment_reply, name="comment_reply"),
+    path(
+        "comment_reply/<int:pk>/<int:comment_id>/",
+        views.comment_reply,
+        name="comment_reply",
+    ),
     path("cart/", views.cart_detail, name="cart_detail"),
     path("cart/update/", views.cart_update, name="cart_update"),
     path("cart/remove/<str:key>/", views.cart_remove, name="cart_remove"),
     path("cart/clear/", views.cart_clear, name="cart_clear"),
-    path("order_detale/<int:id>",views.OrderDetail.as_view(),name="order_detail"),
-    path("order/add", views.OrderCreationsView.as_view(), name="order_add"),
-    path("apply_discount/<int:id>", views.ApplyDiscountView.as_view(), name="apply_discount"),
+    path("order_detail/<int:pk>/", views.OrderDetail.as_view(), name="order_detail"),
+    path("order/add/", views.OrderCreationsView.as_view(), name="order_add"),
+    path("apply_discount/<int:pk>/", views.ApplyDiscountView.as_view(), name="apply_discount"),
 ]

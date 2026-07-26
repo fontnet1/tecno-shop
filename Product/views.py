@@ -1,18 +1,57 @@
 import logging
+from decimal import Decimal, InvalidOperation
+
+from django.db import transaction
 from django.db.models import Count, Q
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.generic import ListView, DetailView, CreateView,View
 from django.contrib import messages
-from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.http import require_POST, require_http_methods
+from django.views.generic import ListView, DetailView
 
 from . import cart
-from .models import Product, Comment, ProductLike, Color, Size, Order, OrderItem, Discount,UsDiscount
-from .forms import CommentForm
 from .cart import Cart
+from .forms import CommentForm
+from .models import (
+    Product, Comment, ProductLike, Color, Size,
+    Order, OrderItem, Discount, UsDiscount,
+)
 
 logger = logging.getLogger(__name__)
+
+# Maximum allowed quantity per cart line / order item
+MAX_QUANTITY = 100
+
+
+def _parse_int(value, default=1, minimum=1, maximum=MAX_QUANTITY):
+    """Safely parse int from untrusted input. Returns ``default`` on failure."""
+    try:
+        result = int(value)
+    except (TypeError, ValueError):
+        return default
+    if result < minimum:
+        return minimum
+    if maximum is not None and result > maximum:
+        return maximum
+    return result
+
+
+def _safe_redirect_back(request, fallback_url_name="products:product_list"):
+    """
+    Redirect back to HTTP_REFERER but ONLY if it's a safe same-host URL.
+    Prevents Open Redirect attacks where a malicious external Referer header
+    could redirect the user to a third-party site.
+    """
+    referer = request.META.get("HTTP_REFERER", "")
+    if referer:
+        # Only allow same-host redirects
+        if request.get_host() in referer:
+            return redirect(referer)
+    return redirect(fallback_url_name)
 
 
 # ─── Product List ──────────────────────────────────────────
@@ -23,11 +62,13 @@ class ProductListView(ListView):
     paginate_by = 9
 
     def get_queryset(self):
-        queryset = Product.objects.prefetch_related(
-            "images", "likes", "color", "size"
+        queryset = (
+            Product.objects
+            .prefetch_related("images", "color", "size")
+            .annotate(like_count_annot=Count("likes"))
         )
 
-        q = self.request.GET.get("q")
+        q = self.request.GET.get("q", "").strip()
         min_price = self.request.GET.get("min_price")
         max_price = self.request.GET.get("max_price")
         color = self.request.GET.get("color")
@@ -38,27 +79,38 @@ class ProductListView(ListView):
             queryset = queryset.filter(
                 Q(title__icontains=q) | Q(description__icontains=q)
             )
+        # Safe numeric filters
         if min_price:
-            queryset = queryset.filter(price__gte=min_price)
+            try:
+                queryset = queryset.filter(price__gte=Decimal(min_price))
+            except (InvalidOperation, TypeError):
+                pass
         if max_price:
-            queryset = queryset.filter(price__lte=max_price)
+            try:
+                queryset = queryset.filter(price__lte=Decimal(max_price))
+            except (InvalidOperation, TypeError):
+                pass
         if color:
-            queryset = queryset.filter(color__id=color)
+            try:
+                queryset = queryset.filter(color__id=int(color))
+            except (TypeError, ValueError):
+                pass
         if size:
-            queryset = queryset.filter(size__id=size)
+            try:
+                queryset = queryset.filter(size__id=int(size))
+            except (TypeError, ValueError):
+                pass
 
-        if ordering == "newest":
-            queryset = queryset.order_by("-created_at")
-        elif ordering == "cheapest":
-            queryset = queryset.order_by("price")
-        elif ordering == "expensive":
-            queryset = queryset.order_by("-price")
-        elif ordering == "popular":
-            queryset = queryset.annotate(
-                like_count=Count("likes")
-            ).order_by("-like_count")
+        # Whitelisted ordering prevents arbitrary SQL/order-by injection
+        ordering_map = {
+            "newest": "-created_at",
+            "cheapest": "price",
+            "expensive": "-price",
+        }
+        if ordering == "popular":
+            queryset = queryset.order_by("-like_count_annot")
         else:
-            queryset = queryset.order_by("-created_at")
+            queryset = queryset.order_by(ordering_map.get(ordering, "-created_at"))
 
         return queryset.distinct()
 
@@ -99,112 +151,142 @@ class ProductDetailView(DetailView):
         else:
             context["is_liked"] = False
 
+        # ⚠ prefetch_related MUST come before slicing, otherwise the prefetch
+        # is dropped and you'll get an N+1 query in the template.
         context["related_products"] = (
             Product.objects.filter(
                 color__in=self.object.color.all()
             )
             .exclude(id=self.object.id)
-            .distinct()[:4]
-            .prefetch_related("images", "likes")
+            .distinct()
+            .prefetch_related("images", "likes")[:4]
         )
 
         return context
 
+
+# ─── Order Creation (POST-only to prevent CSRF via GET) ────
+@method_decorator(login_required, name="dispatch")
+@method_decorator(require_POST, name="dispatch")
 class OrderCreationsView(View):
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated is False :
-            return redirect("home:home")
-
-
-
-        return super().dispatch(request, *args, **kwargs)
-    def get(self,request):
-
+    def post(self, request):
         cart = Cart(request)
-        order = Order.objects.create(user=request.user,total_price=cart.get_total_price())
-        if order:
+        if len(cart) == 0:
+            messages.error(request, "Your cart is empty.")
+            return redirect("products:cart_detail")
+
+        with transaction.atomic():
+            order = Order.objects.create(
+                user=request.user,
+                total_price=cart.get_total_price(),
+            )
             for item in cart:
-                OrderItem.objects.create(order=order, product_id=item['product_id'], quantity=item['quantity']
-                                         ,color_id=item['color_id'], price=item['price'],size_id=item['size_id'])
-
+                OrderItem.objects.create(
+                    order=order,
+                    product_id=item["product_id"],
+                    quantity=item["quantity"],
+                    color_id=item["color_id"],
+                    price=item["price"],
+                    size_id=item["size_id"],
+                )
             cart.clear()
-            return redirect("products:order_detail", order.id)
-        return redirect("home:home")
-
-class OrderDetail(View):
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated is False :
-            return redirect("home:home")
-        return super().dispatch(request, *args, **kwargs)
-
-    def get (self, request, id):
-        order = get_object_or_404(Order, id=id, user=request.user)
-        if order:
-            return render(request,"Product/order_detale.html",{"order":order})
-        return redirect("home:home")
-
-class ApplyDiscountView(View):
-
-    def post(self, request,id):
-        code = request.POST.get("discount_code")
-        order = get_object_or_404(Order, id=id, user=request.user)
-        discount_code = get_object_or_404(Discount, name=code)
-        if(discount_code.quantity==0 or discount_code.is_active== False or discount_code.is_valid()==False ):
-            messages.error(request, "Coupon expired.")
-            return redirect("products:order_detail", order.id)
-        exists = UsDiscount.objects.filter(
-            user=request.user,
-            discount=discount_code,
-        ).exists()
-
-        if exists:
-            messages.error(request, "Code already registered")
-            return redirect("products:order_detail", order.id)
-
-        order.total_price -= order.total_price * discount_code.discount/100
-        order.save()
-        UsDiscount.objects.create(user=request.user, discount_id=discount_code.id)
-        discount_code.quantity-=1
-        discount_code.save()
-        messages.error(request, "Coupon applied")
         return redirect("products:order_detail", order.id)
+
+
+@method_decorator(login_required, name="dispatch")
+class OrderDetail(View):
+    def get(self, request, pk):
+        order = get_object_or_404(Order, id=pk, user=request.user)
+        return render(request, "Product/order_detale.html", {"order": order})
+
+
+@method_decorator(login_required, name="dispatch")
+class ApplyDiscountView(View):
+    def post(self, request, pk):
+        code = (request.POST.get("discount_code") or "").strip()
+        if not code:
+            messages.error(request, "Please enter a coupon code.")
+            return redirect("products:order_detail", pk)
+
+        order = get_object_or_404(Order, id=pk, user=request.user)
+        discount_code = Discount.objects.filter(name=code).first()
+        if not discount_code:
+            messages.error(request, "Coupon code not found.")
+            return redirect("products:order_detail", pk)
+
+        if not discount_code.is_valid():
+            messages.error(request, "Coupon expired or inactive.")
+            return redirect("products:order_detail", pk)
+
+        # Race-condition-safe block: lock the rows we are about to mutate
+        with transaction.atomic():
+            # Re-fetch both rows with a row-level lock
+            order = Order.objects.select_for_update().get(id=order.id)
+            discount_code = Discount.objects.select_for_update().get(id=discount_code.id)
+
+            # Check again inside the lock (another request may have just used it)
+            if discount_code.quantity <= 0 or not discount_code.is_valid():
+                messages.error(request, "Coupon expired.")
+                return redirect("products:order_detail", pk)
+
+            already_used = UsDiscount.objects.filter(
+                user=request.user, discount=discount_code
+            ).exists()
+            if already_used:
+                messages.error(request, "You have already used this coupon.")
+                return redirect("products:order_detail", pk)
+
+            # Apply discount (clamped to >= 0 so price can never go negative)
+            discount_amount = order.total_price * Decimal(discount_code.discount) / Decimal(100)
+            new_total = order.total_price - discount_amount
+            if new_total < 0:
+                new_total = Decimal(0)
+            order.total_price = new_total
+            order.save()
+
+            UsDiscount.objects.create(user=request.user, discount_id=discount_code.id)
+            discount_code.quantity -= 1
+            discount_code.save(update_fields=["quantity"])
+
+        messages.success(request, "Coupon applied successfully.")
+        return redirect("products:order_detail", pk)
+
+
 # ─── Comments ──────────────────────────────────────────────
 @login_required
+@require_POST
 def add_comment(request, pk):
     product = get_object_or_404(Product, pk=pk)
-
-    if request.method == "POST":
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.product = product
-            comment.user = request.user
-            comment.save()
-            messages.success(
-                request,
-                "Your comment has been registered and will be displayed after approval."
-            )
-        else:
-            messages.error(request, "Please fill out the form correctly.")
-
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.product = product
+        comment.user = request.user
+        comment.save()
+        messages.success(
+            request,
+            "Your comment has been registered and will be displayed after approval.",
+        )
+    else:
+        messages.error(request, "Please fill out the form correctly.")
     return redirect("products:product-detail", pk=pk)
 
 
 @login_required
+@require_POST
 def comment_reply(request, pk, comment_id):
     product = get_object_or_404(Product, pk=pk)
     parent = get_object_or_404(Comment, pk=comment_id, product=product)
-
-    if request.method == "POST":
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            reply = form.save(commit=False)
-            reply.product = product
-            reply.user = request.user
-            reply.parent = parent
-            reply.save()
-            messages.success(request, "Your reply has been recorded.")
-
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        reply = form.save(commit=False)
+        reply.product = product
+        reply.user = request.user
+        reply.parent = parent
+        reply.save()
+        messages.success(request, "Your reply has been recorded.")
+    else:
+        messages.error(request, "Please fill out the form correctly.")
     return redirect("products:product-detail", pk=pk)
 
 
@@ -213,11 +295,9 @@ def comment_reply(request, pk, comment_id):
 @require_POST
 def toggle_like(request, pk):
     product = get_object_or_404(Product, pk=pk)
-
     like, created = ProductLike.objects.get_or_create(
         product=product, user=request.user
     )
-
     if not created:
         like.delete()
         is_liked = False
@@ -241,9 +321,19 @@ def add_to_cart(request, pk):
     product = get_object_or_404(Product, pk=pk)
     cart = Cart(request)
 
-    quantity = int(request.POST.get("quantity", 1))
+    quantity = _parse_int(request.POST.get("quantity", 1), default=1)
     color_id = request.POST.get("color") or None
     size_id = request.POST.get("size") or None
+
+    # Validate that the chosen color/size actually belong to this product
+    if color_id:
+        if not product.color.filter(id=color_id).exists():
+            messages.error(request, "Invalid color selected.")
+            return _safe_redirect_back(request)
+    if size_id:
+        if not product.size.filter(id=size_id).exists():
+            messages.error(request, "Invalid size selected.")
+            return _safe_redirect_back(request)
 
     cart.add(
         product_id=product.id,
@@ -252,7 +342,7 @@ def add_to_cart(request, pk):
         size_id=size_id,
     )
     messages.success(request, f"{product.title} added to cart.")
-    return redirect(request.META.get("HTTP_REFERER", "products:product_list"))
+    return _safe_redirect_back(request)
 
 
 def cart_detail(request):
@@ -266,7 +356,8 @@ def cart_update(request):
     for key, quantity in request.POST.items():
         if key.startswith("qty-"):
             item_key = key[4:]
-            cart.update(item_key, int(quantity))
+            qty = _parse_int(quantity, default=1)
+            cart.update(item_key, qty)
     messages.success(request, "Shopping cart updated.")
     return redirect("products:cart_detail")
 

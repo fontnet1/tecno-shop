@@ -28,11 +28,11 @@
                     <div class="carousel-inner bg-light">
                         {% for image in product.images.all %}
                             <div class="carousel-item{% if image.is_primary or forloop.first %} active{% endif %}">
-                                <img class="w-100" src="{{ image.image.url }}" alt="{{ image.alt_text }}">
+                                <img class="w-100" src="{{ image.image.url }}" alt="{{ image.alt_text|default:product.title }}">
                             </div>
                         {% endfor %}
                     </div>
-                    {% if product.images.all.count > 1 %}
+                    {% if product.images.count > 1 %}
                     <a class="carousel-control-prev" href="#product-carousel" data-slide="prev">
                         <i class="fa fa-2x fa-angle-left text-dark"></i>
                     </a>
@@ -48,19 +48,18 @@
                 <div class="h-100 bg-light p-30">
                     <h3>{{ product.title }}</h3>
                     <div class="d-flex align-items-center mb-3">
-                        <h3 class="font-weight-semi-bold mb-0">{{ product.price }}$</h3>
+                        <h3 class="font-weight-semi-bold mb-0">${{ product.price }}</h3>
                         <div class="ml-3">
-                           <form method="post" action="{% url 'products:toggle_like' product.id %}" class="d-inline">
+                            <form method="post" action="{% url 'products:toggle_like' product.id %}" class="d-inline" id="like-form">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-outline-dark like-btn">
-
                                     <i class="fa{% if is_liked %}s{% else %}r{% endif %} fa-heart{% if is_liked %} text-danger{% endif %}"></i>
                                     <span class="like-count">{{ product.likes.count }}</span>
                                 </button>
                             </form>
                         </div>
                     </div>
-                    <p class="mb-4">{{ product.description }}</p>
+                    <p class="mb-4">{{ product.description|linebreaksbr }}</p>
 
                     <!-- Add to Cart Form -->
                     <form method="post" action="{% url 'products:add_to_cart' product.id %}" id="add-to-cart-form">
@@ -95,13 +94,15 @@
                         <div class="d-flex align-items-center mb-4 pt-2">
                             <div class="input-group quantity mr-3" style="width: 130px;">
                                 <div class="input-group-btn">
-                                    <button type="button" class="btn btn-primary btn-minus">
+                                    <button type="button" class="btn btn-primary btn-minus" onclick="changeQty(-1)">
                                         <i class="fa fa-minus"></i>
                                     </button>
                                 </div>
-                                <input type="number" name="quantity" class="form-control bg-secondary border-0 text-center" value="1" min="1">
+                                <input type="number" name="quantity" id="qty-input"
+                                       class="form-control bg-secondary border-0 text-center"
+                                       value="1" min="1" max="100">
                                 <div class="input-group-btn">
-                                    <button type="button" class="btn btn-primary btn-plus">
+                                    <button type="button" class="btn btn-primary btn-plus" onclick="changeQty(1)">
                                         <i class="fa fa-plus"></i>
                                     </button>
                                 </div>
@@ -128,7 +129,7 @@
                         <!-- Description -->
                         <div class="tab-pane fade show active" id="tab-pane-1">
                             <h4 class="mb-3">Product Description</h4>
-                            <p>{{ product.description }}</p>
+                            <p>{{ product.description|linebreaksbr }}</p>
                         </div>
 
                         <!-- Information -->
@@ -164,7 +165,7 @@
                                             <h6>{{ comment.user.username }}
                                                 <small> - <i>{{ comment.created_at|date:"M d, Y" }}</i></small>
                                             </h6>
-                                            <p class="mb-1">{{ comment.text }}</p>
+                                            <p class="mb-1">{{ comment.text|linebreaksbr }}</p>
 
                                             <!-- Replies -->
                                             {% for reply in comment.replies.all %}
@@ -173,13 +174,13 @@
                                                     <h6 class="mb-1">{{ reply.user.username }}
                                                         <small> - <i>{{ reply.created_at|date:"M d, Y" }}</i></small>
                                                     </h6>
-                                                    <p class="mb-0">{{ reply.text }}</p>
+                                                    <p class="mb-0">{{ reply.text|linebreaksbr }}</p>
                                                 </div>
                                                 {% endif %}
                                             {% endfor %}
 
                                             {% if user.is_authenticated %}
-                                            <a href="#" class="text-primary small mt-1 d-inline-block" onclick="document.getElementById('parent-id').value='{{ comment.id }}'; document.getElementById('tab-pane-3').scrollIntoView(); return false;">
+                                            <a href="#" class="text-primary small mt-1 d-inline-block" onclick="document.getElementById('parent-id').value='{{ comment.id }}'; document.getElementById('tab-pane-3').scrollIntoView({behavior:'smooth'}); return false;">
                                                 Reply
                                             </a>
                                             {% endif %}
@@ -199,7 +200,8 @@
                                         <input type="hidden" name="parent" id="parent-id" value="">
                                         <div class="form-group">
                                             <label for="message">Your Review *</label>
-                                            <textarea name="text" id="message" cols="30" rows="5" class="form-control" required></textarea>
+                                            <textarea name="text" id="message" cols="30" rows="5"
+                                                      class="form-control" required maxlength="2000"></textarea>
                                         </div>
                                         <div class="form-group mb-0">
                                             <button type="submit" class="btn btn-primary px-3">Leave Your Review</button>
@@ -245,7 +247,10 @@
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-dark btn-square"><i class="fa fa-shopping-cart"></i></button>
                             </form>
-                            <a class="btn btn-outline-dark btn-square" href="{% url 'products:toggle_like' product.id %}"><i class="far fa-heart"></i></a>
+                            <form method="post" action="{% url 'products:toggle_like' product.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-dark btn-square"><i class="far fa-heart"></i></button>
+                            </form>
                             <a class="btn btn-outline-dark btn-square" href="{{ product.get_absolute_url }}"><i class="fa fa-search"></i></a>
                         </div>
                     </div>
@@ -270,53 +275,55 @@
 
 {% block script %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Quantity +/-
-    var quantityInput = document.querySelector('#add-to-cart-form input[name="quantity"]');
+// ====== Quantity buttons (inline onclick → fully independent of page load order) ======
+function changeQty(delta) {
+    var input = document.getElementById('qty-input');
+    if (!input) return;
+    var val = parseInt(input.value, 10) || 1;
+    val = val + delta;
+    if (val < 1) val = 1;
+    if (val > 100) val = 100;
+    input.value = val;
+}
 
-    document.querySelectorAll('#add-to-cart-form .btn-minus').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var val = parseInt(quantityInput.value) || 1;
-            if (val > 1) quantityInput.value = val - 1;
+// ====== Like toggle (AJAX POST with CSRF) ======
+(function() {
+    var form = document.getElementById('like-form');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = form.querySelector('.like-btn');
+        var icon = form.querySelector('i');
+        var countSpan = form.querySelector('.like-count');
+        var csrfInput = form.querySelector('[name="csrfmiddlewaretoken"]');
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfInput ? csrfInput.value : '',
+            },
+            body: new FormData(form),
+        })
+        .then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(function(data) {
+            if (icon) {
+                icon.className = data.is_liked
+                    ? 'fas fa-heart text-danger'
+                    : 'far fa-heart';
+            }
+            if (countSpan) countSpan.textContent = data.like_count;
+        })
+        .catch(function(err) {
+            console.error('Like error:', err);
+            // Fall back to a normal form submit (server will redirect)
+            // form.submit();
         });
     });
-
-    document.querySelectorAll('#add-to-cart-form .btn-plus').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var val = parseInt(quantityInput.value) || 1;
-            quantityInput.value = val + 1;
-        });
-    });
-
-    // Like toggle
-    var likeBtn = document.querySelector('.like-btn');
-    if (likeBtn) {
-        likeBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var form = this.closest('form');
-            var btn = this;
-            var csrfInput = form.querySelector('[name="csrfmiddlewaretoken"]');
-
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': csrfInput ? csrfInput.value : '',
-                },
-                body: new FormData(form),
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                var icon = btn.querySelector('i');
-                if (data.is_liked) {
-                    icon.className = 'fas fa-heart text-danger';
-                } else {
-                    icon.className = 'far fa-heart';
-                }
-                btn.querySelector('.like-count').textContent = ' ' + data.like_count;
-            });
-        });
-    }
-});
+})();
 </script>
 {% endblock %}

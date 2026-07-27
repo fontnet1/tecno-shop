@@ -1,7 +1,6 @@
 import logging
 from typing import Optional
-from random import randint
-
+import secrets
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
@@ -50,7 +49,7 @@ class OTPService:
                 "Too many requests. Please wait 2 minutes."
             )
 
-        code = randint(100000, 999999)
+        code = secrets.randbelow(900000) + 100000
 
         OTP.objects.filter(
             phone=phone,

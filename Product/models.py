@@ -8,13 +8,26 @@ import os
 
 from Account.models import User, AddAddress
 
+
 class Category(models.Model):
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="subs")
-    title = models.CharField(max_length=200,)
+    title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=250, unique=True, blank=True)
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.title) or "category"
+            slug = base
+            n = 1
+            while Category.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
 
 class Size(models.Model):
     title = models.CharField(max_length=200)
@@ -50,6 +63,14 @@ class Information(models.Model):
 class Product(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=250, unique=True, blank=True)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="products",
+        verbose_name="Category",
+    )
     description = models.TextField()
     price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     size = models.ManyToManyField(Size, related_name="products", blank=True)
@@ -111,7 +132,6 @@ def delete_image_file(sender, instance, **kwargs):
             if os.path.isfile(instance.image.path):
                 os.remove(instance.image.path)
         except (ValueError, OSError):
-            # image path may not exist on storage; ignore silently
             pass
 
 
@@ -173,6 +193,13 @@ class Order(models.Model):
         max_digits=12, decimal_places=2, default=0, verbose_name="Total"
     )
     is_paid = models.BooleanField(default=False, verbose_name="Paid")
+    address = models.ForeignKey(
+        AddAddress,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Shipping Address",
+    )
 
     def __str__(self):
         phone = getattr(self.user, "phone", None) if self.user_id else None
@@ -183,7 +210,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(
         Product,
-        on_delete=models.PROTECT,  # keep order history even if product is deleted
+        on_delete=models.PROTECT,
         related_name="order_items",
     )
     size = models.ForeignKey(
@@ -204,7 +231,6 @@ class OrderItem(models.Model):
 class Discount(models.Model):
     name = models.CharField(max_length=50, verbose_name="Name", unique=True)
     quantity = models.PositiveIntegerField(default=1, verbose_name="Quantity")
-    # Discount percent: must be 0..100
     discount = models.PositiveIntegerField(
         default=0,
         verbose_name="Discount (%)",

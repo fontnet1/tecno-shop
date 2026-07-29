@@ -85,7 +85,6 @@ class OTPService:
             ValueError: If send rate limit has been exceeded
         """
         otp, code = OTPService._generate_and_store_otp(phone, purpose)
-        print(code)
 
         # ─── Send SMS via Ghasedak ───
         sms = ghasedak_sms.SendOtpInput(

@@ -4,7 +4,7 @@ from django.utils.html import format_html
 from .models import (
     Product, ProductImage, Comment, Information,
     Size, Color, UsDiscount, Order, OrderItem, Discount,
-    Category
+    Category, CommentLike
 )
 
 
@@ -24,8 +24,8 @@ class InformationInline(admin.StackedInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("title", "price", "like_count", "comment_count")
-    list_filter = ("size", "color")
+    list_display = ("title", "category", "price", "like_count", "comment_count")
+    list_filter = ("size", "color", "category")
     search_fields = ("title", "description", "slug")
     prepopulated_fields = {"slug": ("title",)}
     ordering = ("-id",)
@@ -66,6 +66,14 @@ class ColorAdmin(admin.ModelAdmin):
     search_fields = ("title",)
 
 
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("title", "slug", "parent")
+    list_filter = ("parent",)
+    search_fields = ("title",)
+    prepopulated_fields = {"slug": ("title",)}
+
+
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = ("user", "product", "text_short", "is_approved", "created_at")
@@ -87,6 +95,19 @@ class CommentAdmin(admin.ModelAdmin):
         queryset.update(is_approved=False)
 
 
+@admin.register(CommentLike)
+class CommentLikeAdmin(admin.ModelAdmin):
+    list_display = ("user", "comment_product", "comment_text_short")
+
+    @admin.display(description="Product")
+    def comment_product(self, obj):
+        return obj.comment.product.title
+
+    @admin.display(description="Comment")
+    def comment_text_short(self, obj):
+        return obj.comment.text[:40] + "..." if len(obj.comment.text) > 40 else obj.comment.text
+
+
 class OrderItemInline(admin.StackedInline):
     model = OrderItem
     extra = 1
@@ -95,7 +116,7 @@ class OrderItemInline(admin.StackedInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "total_price", "is_paid", "item_count", "created_at")
+    list_display = ("id", "user", "total_price", "is_paid", "address", "item_count", "created_at")
     list_filter = ("is_paid", "created_at")
     search_fields = ("user__phone", "user__full_name", "id")
     readonly_fields = ("total_price", "created_at")
@@ -119,7 +140,3 @@ class UsDiscountAdmin(admin.ModelAdmin):
     list_display = ("user", "discount")
     list_filter = ("discount",)
     search_fields = ("user__phone", "user__full_name", "discount__name")
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('title', 'slug','parent')
-    prepopulated_fields = {"slug": ("title",)}

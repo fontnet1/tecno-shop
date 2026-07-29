@@ -1,6 +1,6 @@
 import logging
 
-from Account.models import OTP
+from Account.models import OTP, AddAddress
 from .forms import (
     LoginForm,
     VerifyOTPForm,
@@ -13,9 +13,12 @@ from .forms import (
 from django.db.models import Q
 from django.contrib.auth import login, logout
 from django.contrib.messages import success, error, warning
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, resolve_url, get_object_or_404
 from django.utils import timezone
 from django.views import View
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from datetime import timedelta
 
 from .models import User
@@ -23,6 +26,17 @@ from .conf import AccountSettings
 from .services import OTPService, AuthService
 
 logger = logging.getLogger(__name__)
+
+
+def _safe_redirect(request, fallback_url_name):
+    """Redirect to 'next' only if it's a safe same-host URL. Prevents Open Redirect."""
+    next_url = request.GET.get("next")
+    if next_url:
+        resolved = resolve_url(next_url)
+        # Only allow relative (same-host) URLs
+        if resolved.startswith("/") and not resolved.startswith("//"):
+            return redirect(next_url)
+    return redirect(fallback_url_name)
 
 
 # ─── Login (Password) ────────────────────────────────────────────
@@ -36,7 +50,6 @@ class Login(View):
         return render(request, "Account/login.html", {"form": form})
 
     def post(self, request):
-
         form = LoginForm(request.POST, request=request)
 
         if form.is_valid():
@@ -45,6 +58,7 @@ class Login(View):
             return redirect("home:home")
 
         return render(request, "Account/login.html", {"form": form})
+
 
 # ─── Register ─────────────────────────────────────────────────────
 class Register(View):
@@ -88,8 +102,8 @@ class Register(View):
 
         request.session["phone"] = cd["phone"]
         request.session["purpose"] = OTP.REGISTER
-        request.session["otp_identifier"] = cd["phone"]  # ← اضافه شد
-        request.session["otp_via_email"] = False  # ← اضافه شد
+        request.session["otp_identifier"] = cd["phone"]
+        request.session["otp_via_email"] = False
 
         return redirect("Account:otp")
 
@@ -126,8 +140,8 @@ class VerifyOTP(View):
 
         expire_timestamp = int(
             (
-                    otp.created_at +
-                    timedelta(minutes=AccountSettings.OTP_EXPIRE_MINUTES)
+                otp.created_at +
+                timedelta(minutes=AccountSettings.OTP_EXPIRE_MINUTES)
             ).timestamp()
         )
 
@@ -182,7 +196,6 @@ class VerifyOTP(View):
                 purpose=purpose,
             )
         except ValueError as e:
-            # Attempt rate limit reached
             context = self._get_otp_context(request)
             if context is None:
                 return redirect("Account:register")
@@ -208,9 +221,7 @@ class VerifyOTP(View):
             context["form"] = form
             return render(request, "Account/otp.html", context)
 
-        # ==========================
-        # Registration
-        # ==========================
+        # ─── Registration ───
         if purpose == OTP.REGISTER:
             user.is_active = True
             user.save()
@@ -218,9 +229,7 @@ class VerifyOTP(View):
             login(request, user)
             success(request, "Your account has been activated successfully.")
 
-        # ==========================
-        # Login with code
-        # ==========================
+        # ─── Login with code ───
         elif purpose == OTP.LOGIN:
             if not user.is_active:
                 context = self._get_otp_context(request)
@@ -234,9 +243,7 @@ class VerifyOTP(View):
             login(request, user)
             success(request, "Logged in successfully.")
 
-        # ==========================
-        # Forgot password
-        # ==========================
+        # ─── Forgot password ───
         elif purpose == OTP.RESET_PASSWORD:
             request.session["reset_password_user"] = user.id
             otp_object.delete()
@@ -284,6 +291,7 @@ class ResendOTP(View):
 
         return redirect("Account:otp")
 
+
 # ─── Login With OTP ───────────────────────────────────────────────
 class LoginWithOTP(View):
 
@@ -321,9 +329,8 @@ class LoginWithOTP(View):
             Q(phone=username) | Q(email=username)
         ).first()
 
-        # ─── Do not reveal information: same response ───
+        # Do not reveal information: same response for all cases
         if user and not user.is_active:
-            # Inactive user — code is not sent but response is the same
             return render(
                 request,
                 "Account/login_with_otp_AND_forgot_password.html",
@@ -333,8 +340,6 @@ class LoginWithOTP(View):
                 },
             )
 
-        # ─── LoginWithOTP.post() ───
-        # ─── LoginWithOTP.post() ───
         if user and user.is_active:
             try:
                 is_email_input = '@' in username
@@ -435,9 +440,7 @@ class ForgotPassword(View):
             Q(phone=username) | Q(email=username)
         ).first()
 
-        # ─── Do not reveal information ───
-        # ─── ForgotPassword.post() ───
-        # ─── ForgotPassword.post() ───
+        # Do not reveal information
         if user:
             try:
                 is_email_input = '@' in username
@@ -450,8 +453,8 @@ class ForgotPassword(View):
                 )
                 request.session["phone"] = user.phone
                 request.session["purpose"] = OTP.RESET_PASSWORD
-                request.session["otp_identifier"] = username  # ← اضافه شد
-                request.session["otp_via_email"] = is_email_input  # ← اضافه شد
+                request.session["otp_identifier"] = username
+                request.session["otp_via_email"] = is_email_input
                 return redirect("Account:otp")
             except ValueError as e:
                 warning(request, str(e))
@@ -465,6 +468,7 @@ class ForgotPassword(View):
                 "nameform": "Forgot Password",
             },
         )
+
 
 # ─── Logout ───────────────────────────────────────────────────────
 class LogoutView(View):
@@ -487,24 +491,49 @@ class ChoosePasswordOrCode(View):
             },
         )
 
-class AddAddress(View):
 
+# ─── Add Address ─────────────────────────────────────────────────
+@method_decorator(login_required, name="dispatch")
+class AddAddressView(View):
+    """Add a new shipping address for the user."""
 
     def get(self, request):
         form = AddAddressForm()
-        return render(request,"Account/AddAddres.html",context={"form": form})
+        return render(request, "Account/AddAddres.html", context={"form": form})
 
     def post(self, request):
-        form=AddAddressForm(request.POST)
+        form = AddAddressForm(request.POST)
         if form.is_valid():
-            Addres=form.save(commit=False)
-            Addres.user=request.user
-            Addres.save()
-            next_page = request.GET.get("next")
-            if next_page:
-                return redirect(next_page)
-
+            address = form.save(commit=False)
+            address.user = request.user
+            address.save()
+            success(request, "Address added successfully.")
+            # Safe redirect — prevents Open Redirect vulnerability
+            return _safe_redirect(request, "products:cart_detail")
 
         return render(
             request,
-            "Account/AddAddres.html",context={"form": form}, )
+            "Account/AddAddres.html",
+            context={"form": form},
+        )
+
+
+# ─── Address List ─────────────────────────────────────────────────
+@method_decorator(login_required, name="dispatch")
+class AddressList(View):
+    """Show all user addresses with delete option."""
+
+    def get(self, request):
+        addresses = request.user.adresses.all()
+        return render(request, "Account/address_list.html", {"addresses": addresses})
+
+
+# ─── Delete Address (POST only) ───────────────────────────────────
+@login_required
+@require_POST
+def delete_address(request, pk):
+    """Delete a user's address. POST-only for security."""
+    address = get_object_or_404(AddAddress, pk=pk, user=request.user)
+    address.delete()
+    success(request, "Address deleted successfully.")
+    return redirect("Account:address_list")

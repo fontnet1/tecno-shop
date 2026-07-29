@@ -2,6 +2,20 @@
 
 {% block main %}
 
+    <!-- Breadcrumb Start -->
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+            <div class="col-12">
+                <nav class="breadcrumb bg-light mb-30">
+                    <a class="breadcrumb-item text-dark" href="{% url 'home:home' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'products:orders' %}">My Orders</a>
+                    <span class="breadcrumb-item active">Order #{{ order.id }}</span>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
+
     <!-- Order Detail Start -->
     <div class="container-fluid">
         <div class="row px-xl-5">
@@ -87,7 +101,7 @@
                 </div>
 
                 {% if request.user.adresses.all %}
-                    <form method="post" action="#">
+                    <form method="post" action="{% url 'products:order_pay' order.id %}">
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="address-select">Shipping Address</label>

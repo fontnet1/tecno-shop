@@ -30,7 +30,7 @@
                                     {% endif %}
                                     {{ item.title|escape }}
                                 </td>
-                                <td class="align-middle">${{ item.price }}</td>
+                                <td class="align-middle">${{ item.price|floatformat:2 }}</td>
                                 <td class="align-middle">
                                     <div class="input-group quantity mx-auto" style="width: 100px;">
                                         <div class="input-group-btn">
@@ -50,7 +50,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="align-middle">${{ item.total }}</td>
+                                <td class="align-middle">${{ item.total|floatformat:2 }}</td>
                                 <td class="align-middle">
                                     <form method="post" action="{% url 'products:cart_remove' item.key %}" class="d-inline">
                                         {% csrf_token %}
@@ -102,7 +102,7 @@
                     <div class="pt-2">
                         <div class="d-flex justify-content-between mt-2">
                             <h5>Total</h5>
-                            <h5>${{ cart.get_total_price|floatformat:2 }}</h5>
+                            <h5>${{ cart.get_total_price|add:10|floatformat:2 }}</h5>
                         </div>
                         <form method="post" action="{% url 'products:order_add' %}">
                             {% csrf_token %}

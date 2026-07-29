@@ -48,13 +48,13 @@
                 <div class="h-100 bg-light p-30">
                     <h3>{{ product.title }}</h3>
                     <div class="d-flex align-items-center mb-3">
-                        <h3 class="font-weight-semi-bold mb-0">${{ product.price }}</h3>
+                        <h3 class="font-weight-semi-bold mb-0">${{ product.price|floatformat:2 }}</h3>
                         <div class="ml-3">
                             <form method="post" action="{% url 'products:toggle_like' product.id %}" class="d-inline" id="like-form">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-outline-dark like-btn">
                                     <i class="fa{% if is_liked %}s{% else %}r{% endif %} fa-heart{% if is_liked %} text-danger{% endif %}"></i>
-                                    <span class="like-count">{{ product.likes.count }}</span>
+                                    <span class="like-count">{{ product.like_count_annot }}</span>
                                 </button>
                             </form>
                         </div>
@@ -159,22 +159,40 @@
                                     <div class="media mb-4">
                                         <div class="mr-3 mt-1 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
                                             style="width: 45px; height: 45px; font-weight: bold;">
-                                            {{ comment.user.username.0|upper }}
+                                            {{ comment.user.full_name.0|upper }}
                                         </div>
                                         <div class="media-body">
-                                            <h6>{{ comment.user.username }}
+                                            <h6>{{ comment.user.full_name }}
                                                 <small> - <i>{{ comment.created_at|date:"M d, Y" }}</i></small>
                                             </h6>
                                             <p class="mb-1">{{ comment.text|linebreaksbr }}</p>
+                                            {% if user.is_authenticated %}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary comment-like-btn ml-2" 
+                                                    data-comment-id="{{ comment.id }}"
+                                                    data-csrf="{{ csrf_token }}"
+                                                    title="Like comment">
+                                                <i class="fa{% if comment.id in liked_comment_ids %}s text-primary{% else %}r{% endif %} fa-thumbs-up"></i>
+                                                <span class="comment-like-count">{{ comment.likes.count }}</span>
+                                            </button>
+                                            {% endif %}
 
                                             <!-- Replies -->
                                             {% for reply in comment.replies.all %}
                                                 {% if reply.is_approved %}
                                                 <div class="ml-4 mt-2 bg-white p-3 rounded">
-                                                    <h6 class="mb-1">{{ reply.user.username }}
+                                                    <h6 class="mb-1">{{ reply.user.full_name }}
                                                         <small> - <i>{{ reply.created_at|date:"M d, Y" }}</i></small>
                                                     </h6>
                                                     <p class="mb-0">{{ reply.text|linebreaksbr }}</p>
+                                                    {% if user.is_authenticated %}
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary comment-like-btn ml-2" 
+                                                            data-comment-id="{{ reply.id }}"
+                                                            data-csrf="{{ csrf_token }}"
+                                                            title="Like comment">
+                                                        <i class="fa{% if reply.id in liked_comment_ids %}s text-primary{% else %}r{% endif %} fa-thumbs-up"></i>
+                                                        <span class="comment-like-count">{{ reply.likes.count }}</span>
+                                                    </button>
+                                                    {% endif %}
                                                 </div>
                                                 {% endif %}
                                             {% endfor %}
@@ -257,10 +275,10 @@
                     <div class="text-center py-4">
                         <a class="h6 text-decoration-none text-truncate d-block" href="{{ product.get_absolute_url }}">{{ product.title }}</a>
                         <div class="d-flex align-items-center justify-content-center mt-2">
-                            <h5>${{ product.price }}</h5>
+                            <h5>${{ product.price|floatformat:2 }}</h5>
                         </div>
                         <div class="d-flex align-items-center justify-content-center mt-1">
-                            <small class="text-muted"><i class="far fa-heart"></i> {{ product.likes.count }}</small>
+                            <small class="text-muted"><i class="far fa-heart"></i> {{ product.like_count_annot }}</small>
                         </div>
                     </div>
                 </div>
@@ -275,7 +293,7 @@
 
 {% block script %}
 <script>
-// ====== Quantity buttons (inline onclick → fully independent of page load order) ======
+// ====== Quantity buttons (inline onclick -> fully independent of page load order) ======
 function changeQty(delta) {
     var input = document.getElementById('qty-input');
     if (!input) return;
@@ -325,5 +343,31 @@ function changeQty(delta) {
         });
     });
 })();
+
+// Comment Like Toggle
+document.querySelectorAll('.comment-like-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var commentId = btn.dataset.commentId;
+        var csrfToken = btn.dataset.csrf;
+        fetch('/products/toggle_comment_like/' + commentId + '/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken,
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            var icon = btn.querySelector('i');
+            var countSpan = btn.querySelector('.comment-like-count');
+            if (data.is_liked) {
+                icon.className = 'fas fa-thumbs-up text-primary';
+            } else {
+                icon.className = 'far fa-thumbs-up';
+            }
+            if (countSpan) countSpan.textContent = data.like_count;
+        });
+    });
+});
 </script>
 {% endblock %}

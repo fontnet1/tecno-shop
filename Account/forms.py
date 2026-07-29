@@ -1,4 +1,3 @@
-from email.headerregistry import Address
 from .models import AddAddress
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
@@ -335,8 +334,6 @@ class ForgotPasswordForm(forms.Form):
         return validate_username(username)
 
 class AddAddressForm(forms.ModelForm):
-
     class Meta:
-        user = forms.IntegerField(required=False)
         model = AddAddress
         exclude = ("user",)

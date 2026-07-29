@@ -15,5 +15,7 @@ urlpatterns = [
     path("reset-password/", views.ResetPassword.as_view(), name="reset_password"),
     path("choose_a_password_or_code/", views.ChoosePasswordOrCode.as_view(), name="choose_a_password_or_code"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
-    path("add-Address/", views.AddAddress.as_view(), name="add_address"),
+    path("add-address/", views.AddAddressView.as_view(), name="add_address"),
+    path("addresses/", views.AddressList.as_view(), name="address_list"),
+    path("delete-address/<int:pk>/", views.delete_address, name="delete_address"),
 ]

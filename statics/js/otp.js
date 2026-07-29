@@ -81,62 +81,13 @@ otpInputs.forEach((input, index) => {
 });
 
 
-// ===== Countdown Timer =====
-let timeLeft = 120;
-let timerInterval;
-
-function startTimer() {
-  const timerText = document.getElementById('timer-text');
-  const timerSection = document.getElementById('otp-timer');
-  const resendSection = document.getElementById('resend-section');
-
-  if (!timerSection || !resendSection || !timerText) return;
-
-  timerSection.style.display = 'flex';
-  resendSection.style.display = 'none';
-  timeLeft = 120;
-
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-    const secs = (timeLeft % 60).toString().padStart(2, '0');
-    timerText.innerHTML = 'Resend code in <strong>' + mins + ':' + secs + '</strong>';
-
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      timerSection.style.display = 'none';
-      resendSection.style.display = 'block';
-    }
-  }, 1000);
-}
-
-startTimer();
-
-
 // ===== Resend Code =====
 function resendCode(e) {
   e.preventDefault();
-  const btn = e.target.closest('.btn-resend');
-  if (!btn) return;
-
-  btn.textContent = 'Sending...';
-  btn.disabled = true;
-
-  setTimeout(() => {
-    btn.textContent = 'Resend Code';
-    btn.disabled = false;
-    startTimer();
-
-    const inputs = document.querySelectorAll('.otp-input');
-    inputs.forEach(inp => {
-      inp.value = '';
-      inp.classList.remove('filled', 'success', 'error');
-    });
-    inputs[0].focus();
-
-    alert('A new verification code has been sent to your phone.');
-  }, 1000);
+  const form = document.getElementById('resend-form');
+  if (form) {
+    form.submit();
+  }
 }
 
 

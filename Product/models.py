@@ -8,6 +8,13 @@ import os
 
 from Account.models import User, AddAddress
 
+class Category(models.Model):
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="subs")
+    title = models.CharField(max_length=200,)
+    slug = models.SlugField(max_length=250, unique=True, blank=True)
+
+    def __str__(self):
+        return self.title
 
 class Size(models.Model):
     title = models.CharField(max_length=200)

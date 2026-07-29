@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from .models import (
     Product, ProductImage, Comment, Information,
     Size, Color, UsDiscount, Order, OrderItem, Discount,
+    Category
 )
 
 
@@ -118,3 +119,7 @@ class UsDiscountAdmin(admin.ModelAdmin):
     list_display = ("user", "discount")
     list_filter = ("discount",)
     search_fields = ("user__phone", "user__full_name", "discount__name")
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug','parent')
+    prepopulated_fields = {"slug": ("title",)}

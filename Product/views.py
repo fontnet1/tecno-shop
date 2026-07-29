@@ -11,7 +11,8 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.http import require_POST, require_http_methods
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView,TemplateView
+from unicodedata import category
 
 from . import cart
 from .cart import Cart
@@ -19,6 +20,7 @@ from .forms import CommentForm
 from .models import (
     Product, Comment, ProductLike, Color, Size,
     Order, OrderItem, Discount, UsDiscount,
+    Category
 )
 
 logger = logging.getLogger(__name__)
@@ -192,6 +194,12 @@ class OrderCreationsView(View):
             cart.clear()
         return redirect("products:order_detail", order.id)
 
+class NavbarPartialView(TemplateView):
+    template_name = "includs/Navbar.html"
+    def get_context_data(self, **kwargs):
+        context=super(NavbarPartialView, self).get_context_data()
+        context["categoris"] = Category.objects.all()
+        return context
 
 @method_decorator(login_required, name="dispatch")
 class OrderDetail(View):

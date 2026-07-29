@@ -7,6 +7,8 @@ app_name = "products"
 urlpatterns = [
     path("", views.ProductListView.as_view(), name="product_list"),
     path("<int:pk>/", views.ProductDetailView.as_view(), name="product-detail"),
+    path("navbar/", views.NavbarPartialView.as_view(), name="navbar"),
+
     path("add_to_cart/<int:pk>/", views.add_to_cart, name="add_to_cart"),
     path("toggle_like/<int:pk>/", views.toggle_like, name="toggle_like"),
     path("add_comment/<int:pk>/", views.add_comment, name="add_comment"),
